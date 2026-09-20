@@ -3,6 +3,9 @@ import Footer from "@/components/layout/Footer";
 import CartSidebar from "@/components/ui/CartSidebar";
 import Toast from "@/components/ui/Toast";
 
+
+
+
 export default function ShopLayout({
   children,
 }: {

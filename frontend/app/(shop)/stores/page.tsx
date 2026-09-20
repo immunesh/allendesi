@@ -18,8 +18,8 @@ import { getAllStores } from "@/lib/store-api";
 import { MapPin, Phone, Mail, Clock, Navigation } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Find a HairsUp Store Near You',
-  description: '50+ HairsUp experience centres across India. Book a free in-store consultation with our certified hair specialists.',
+  title: 'Find a Allendesi Store Near You',
+  description: '50+ Allendesi experience centres across India. Book a free in-store consultation with our certified hair specialists.',
 };
 
  
@@ -32,7 +32,7 @@ export default async function StoresPage() {
       <div className="page-hero py-14 text-center">
         <div className="container-custom max-w-2xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-4">
-            Find a HairsUp Store
+            Find a Allendesi Store
           </h1>
           <p className="text-white/75 text-lg mb-6">
             Visit any of our 50+ experience centres for a personalised wig consultation — completely free.
@@ -64,10 +64,10 @@ export default async function StoresPage() {
             and help you with a professional fitting — all completely free.
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
-            <a href="tel:+911800hairsup" className="btn-primary flex items-center gap-2">
+            <a href="tel:+911800Allendesi" className="btn-primary flex items-center gap-2">
               <Phone className="w-4 h-4" /> Call to Book
             </a>
-            <a href="mailto:hello@hairsup.com" className="btn-secondary flex items-center gap-2">
+            <a href="mailto:hello@Allendesi.com" className="btn-secondary flex items-center gap-2">
               <Mail className="w-4 h-4" /> Email Us
             </a>
           </div>

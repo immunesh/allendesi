@@ -31,7 +31,7 @@ const [form, setForm] = useState({
   description: "",
   tags: "",
   sku: "",
-  brand: "HairsUp",
+  brand: "Allendesi",
 
   material: "",
   capSize: "",

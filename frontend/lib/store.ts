@@ -19,15 +19,27 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
-      setAuth: (user, accessToken, refreshToken) =>
-        set({ user, accessToken, refreshToken, isAuthenticated: true }),
-      clearAuth: () =>
-        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false }),
+      setAuth: (user, accessToken, refreshToken) => {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('accessToken', accessToken);
+          localStorage.setItem('refreshToken', refreshToken);
+          localStorage.setItem('role', user.role);
+        }
+        set({ user, accessToken, refreshToken, isAuthenticated: true });
+      },
+      clearAuth: () => {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('role');
+        }
+        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+      },
       updateUser: (updates) =>
         set((state) => ({ user: state.user ? { ...state.user, ...updates } : null })),
     }),
     {
-      name: 'hairsup-auth',
+      name: 'Allendesi-auth',
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,

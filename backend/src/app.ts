@@ -5,8 +5,9 @@ import helmet from "helmet";
 import compression from "compression";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
-
+import passwordRoutes from './routes/passwordRoutes'
 import authRoutes from "./routes/auth.routes";
+import googleRoutes from "./routes/google";
 import productRoutes from "./routes/product.routes";
 import cartRoutes from "./routes/cart.routes";
 import orderRoutes from "./routes/order.routes";
@@ -23,6 +24,8 @@ import {
 } from "./middleware/error.middleware";
 import blogRoutes from "./routes/blog.routes";
 import storeRoutes from "./routes/store.routes";
+import dashboardRoutes from './routes/dashboard.routes';
+
 const app = express();
 
 app.use(
@@ -60,6 +63,7 @@ app.use(
     credentials: true,
   })
 );
+app.use('/api/dashboard', dashboardRoutes);
 
 app.use(compression());
 
@@ -98,7 +102,8 @@ app.get("/health", (_, res) => {
 /* ---------------- API ROUTES ---------------- */
 
 app.use("/api/auth", authRoutes);
-
+app.use("/api/auth", googleRoutes);
+app.use('/api/auth', passwordRoutes)
 app.use(
   "/api/products",
   productRoutes

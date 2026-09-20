@@ -11,16 +11,13 @@ import {
   Star,
   Check,
   Truck,
-  RotateCcw,
   Shield,
   ChevronRight,
   Minus,
   Plus,
-  Zap,
   Award,
   Info,
 } from "lucide-react";
-import Product360View from "@/components/features/Product360View";
 import ProductCard from "@/components/ui/ProductCard";
 import StarRating from "@/components/ui/StarRating";
 import { formatPrice, getDiscountPercent, formatDate } from "@/lib/utils";
@@ -48,7 +45,6 @@ export default function ProductDetailPage() {
     Record<string, string>
   >({});
   const [addingToCart, setAddingToCart] = useState(false);
-  const [viewMode, setViewMode] = useState<"gallery" | "360">("gallery");
   const [activeImage, setActiveImage] = useState(0);
   const [userRating, setUserRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
@@ -271,108 +267,56 @@ export default function ProductDetailPage() {
         <div className="grid lg:grid-cols-2 gap-10 xl:gap-16">
           {/* ── LEFT: Images ── */}
           <div className="space-y-4">
-            {/* View mode toggle */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setViewMode("gallery")}
-                className={cn(
-                  "px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all",
-                  viewMode === "gallery"
-                    ? "border-brand-500 bg-brand-50 text-brand-700"
-                    : "border-gray-200 text-gray-600",
+            <div className="space-y-3">
+              {/* Main image */}
+              <div className="relative rounded-2xl overflow-hidden bg-gray-50 group w-full h-[560px]">
+                {sortedImages[activeImage] && (
+                  <Image
+                    src={sortedImages[activeImage].url}
+                    alt={product.name}
+                    fill
+                    className="object-fill pointer-events-none"
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                  />
                 )}
-              >
-                Gallery
-              </button>
-              <button
-                onClick={() => setViewMode("360")}
-                className={cn(
-                  "px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all flex items-center gap-1.5",
-                  viewMode === "360"
-                    ? "border-brand-500 bg-brand-50 text-brand-700"
-                    : "border-gray-200 text-gray-600",
+                {discountPct > 0 && (
+                  <div className="absolute top-4 left-4 badge-sale text-sm font-bold px-3 py-1">
+                    -{discountPct}%
+                  </div>
                 )}
-              >
-                <RotateCcw className="w-4 h-4" /> 360° View
-              </button>
-            </div>
-
-            {viewMode === "360" ? (
-              <Product360View
-                images={
-                  sortedImages.length > 0
-                    ? sortedImages
-                    : [
-                        {
-                          id: "fallback",
-                          url: primaryImage?.url || "",
-                          angle: 0,
-                          isPrimary: true,
-                        },
-                      ]
-                }
-                productName={product.name}
-              />
-            ) : (
-              <div className="space-y-3">
-                {/* Main image */}
-                <div className="relative rounded-2xl overflow-hidden bg-gray-50 group w-full h-[560px]">
-                  {sortedImages[activeImage] && (
-                    <Image
-                      src={sortedImages[activeImage].url}
-                      alt={product.name}
-                      fill
-                      className="object-fill pointer-events-none"
-                      priority
-                      sizes="(max-width: 1024px) 100vw, 50vw"
-                    />
-                  )}
-                  {discountPct > 0 && (
-                    <div className="absolute top-4 left-4 badge-sale text-sm font-bold px-3 py-1">
-                      -{discountPct}%
-                    </div>
-                  )}
-                  {product.isNewArrival && (
-                    <div className="absolute top-4 right-4 badge-new text-sm px-3 py-1">
-                      New Arrival
-                    </div>
-                  )}
-                </div>
-                {/* Thumbnails */}
-                {sortedImages.length > 1 && (
-                  <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-                    {sortedImages.map((img, idx) => (
-                      <button
-                        key={img.id}
-                        onClick={() => setActiveImage(idx)}
-                        className={cn(
-                          "relative flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border-2 transition-all",
-                          activeImage === idx
-                            ? "border-brand-500"
-                            : "border-gray-200 hover:border-brand-300",
-                        )}
-                      >
-                        <Image
-                          src={img.url}
-                          alt={`View ${idx + 1}`}
-                          fill
-                          className="object-fill"
-                          sizes="80px"
-                        />
-                      </button>
-                    ))}
+                {product.isNewArrival && (
+                  <div className="absolute top-4 right-4 badge-new text-sm px-3 py-1">
+                    New Arrival
                   </div>
                 )}
               </div>
-            )}
-
-            {/* Try-on CTA */}
-            <Link
-              href={`/try-on?wig=${product.id}`}
-              className="flex items-center justify-center gap-2 bg-brand-50 hover:bg-brand-100 border border-brand-200 text-brand-700 font-semibold rounded-2xl py-3 px-5 transition-colors"
-            >
-              <Zap className="w-4 h-4" /> Try this wig virtually — Free
-            </Link>
+              {/* Thumbnails */}
+              {sortedImages.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+                  {sortedImages.map((img, idx) => (
+                    <button
+                      key={img.id}
+                      onClick={() => setActiveImage(idx)}
+                      className={cn(
+                        "relative flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border-2 transition-all",
+                        activeImage === idx
+                          ? "border-brand-500"
+                          : "border-gray-200 hover:border-brand-300",
+                      )}
+                    >
+                      <Image
+                        src={img.url}
+                        alt={`View ${idx + 1}`}
+                        fill
+                        className="object-fill"
+                        sizes="80px"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* ── RIGHT: Product Info ── */}
@@ -548,7 +492,7 @@ export default function ProductDetailPage() {
             {/* Delivery / Returns strip */}
             <div className="grid grid-cols-3 gap-3">
               {product.features?.map((feature, index) => {
-                const icons = [Truck, RotateCcw, Shield];
+                const icons = [Truck, Shield, Award];
                 const colors = [
                   "text-green-600",
                   "text-blue-600",

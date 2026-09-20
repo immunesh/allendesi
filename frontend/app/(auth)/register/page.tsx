@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const { setAuth } = useAuthStore();
   const { showToast } = useUIStore();
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', password: '', confirm: '' });
+  const [role, setRole] = useState<'CUSTOMER' | 'SELLER'>('CUSTOMER');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -43,13 +44,14 @@ export default function RegisterPage() {
         email: form.email,
         phone: form.phone,
         password: form.password,
+        role,
       });
       const { user, accessToken, refreshToken } = data.data;
-      setAuth(user, accessToken, refreshToken);
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      showToast(`Welcome to HairsUp, ${user.firstName}! 🎉`);
-      router.push('/');
+      const normalizedUser = { ...user, role: (user.role || role).toUpperCase() };
+      setAuth(normalizedUser, accessToken, refreshToken);
+      showToast(`Welcome to Allendesi, ${normalizedUser.firstName}! 🎉`);
+      if (normalizedUser.role === 'SELLER') router.push('/seller');
+      else router.push('/');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       showToast(error?.response?.data?.message || 'Registration failed', 'error');
@@ -85,11 +87,11 @@ export default function RegisterPage() {
           <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
-          <span className="text-2xl font-display font-bold text-white">HairsUp</span>
+          <span className="text-2xl font-display font-bold text-white">Allendesi</span>
         </Link>
         <div className="relative z-10">
-          <h2 className="text-4xl font-display font-bold text-white mb-4">Join the HairsUp Family</h2>
-          <p className="text-white/70 text-lg mb-8">Create your account and unlock the full HairsUp experience.</p>
+          <h2 className="text-4xl font-display font-bold text-white mb-4">Join the Allendesi Family</h2>
+          <p className="text-white/70 text-lg mb-8">Create your account and unlock the full Allendesi experience.</p>
           <div className="space-y-4">
             {['₹500 welcome discount on your first order', 'Early access to new arrivals & sales', 'Personalised style recommendations', 'Expert wig care tips & tutorials', 'Free virtual try-on for all members'].map((perk) => (
               <div key={perk} className="flex items-center gap-3 text-white/80">
@@ -101,7 +103,7 @@ export default function RegisterPage() {
             ))}
           </div>
         </div>
-        <p className="text-white/40 text-xs relative z-10">© 2025 HairsUp Technologies Pvt. Ltd.</p>
+        <p className="text-white/40 text-xs relative z-10">© 2025 Allendesi Technologies Pvt. Ltd.</p>
       </div>
 
       {/* Right panel */}
@@ -109,7 +111,7 @@ export default function RegisterPage() {
         <div className="max-w-md w-full mx-auto">
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <Sparkles className="w-6 h-6 text-brand-600" />
-            <span className="text-xl font-display font-bold text-gradient">HairsUp</span>
+            <span className="text-xl font-display font-bold text-gradient">Allendesi</span>
           </div>
 
           <h1 className="text-3xl font-display font-bold text-gray-900 mb-2">Create Account</h1>
@@ -143,6 +145,18 @@ export default function RegisterPage() {
                 />
                 {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Account Type</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as 'CUSTOMER' | 'SELLER')}
+                className="input-field"
+              >
+                <option value="CUSTOMER">Customer</option>
+                <option value="SELLER">Seller</option>
+              </select>
             </div>
 
             <div>
@@ -226,7 +240,7 @@ export default function RegisterPage() {
             <label className="flex items-start gap-3 cursor-pointer">
               <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 text-brand-600 rounded" />
               <span className="text-sm text-gray-600">
-                I agree to HairsUp&apos;s{' '}
+                I agree to Allendesi&apos;s{' '}
                 <Link href="/terms" className="text-brand-600 hover:underline">Terms of Service</Link> and{' '}
                 <Link href="/privacy" className="text-brand-600 hover:underline">Privacy Policy</Link>
               </span>

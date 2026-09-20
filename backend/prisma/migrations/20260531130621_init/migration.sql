@@ -69,7 +69,7 @@ CREATE TABLE "products" (
     "salePrice" REAL,
     "stock" INTEGER NOT NULL DEFAULT 0,
     "sku" TEXT NOT NULL,
-    "brand" TEXT NOT NULL DEFAULT 'HairsUp',
+    "brand" TEXT NOT NULL DEFAULT 'Allendesi',
     "material" TEXT,
     "capSize" TEXT,
     "length" TEXT,

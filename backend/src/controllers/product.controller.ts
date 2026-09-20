@@ -271,319 +271,366 @@ export const createProduct = async (
   res: Response
 ): Promise<void> => {
   try {
-    console.log(req.body);
-const {
-  name,
-  slug,
-  shortDesc,
-  description,
-  categoryId,
-  gender,
-  basePrice,
-  salePrice,
-  stock,
-  sku,
-  brand,
-  tags,
-  images,
-
-  material,
-  capSize,
-  length,
-  density,
-  texture,
-  color,
-
-  rating,
-
-  isFeatured,
-  isBestSeller,
-  isNewArrival,
-  features,
-faqs,
-careGuides,
-includedItems,
-
-} = req.body;
-console.log("IMAGES RECEIVED:");
-console.log(images);
-    const product =
-      await prisma.product.create({
-    data: {
-  name,
-  slug,
-  description,
-  shortDesc,
-material,
-capSize,
-length,
-density,
-texture,
-color,
-
-rating: Number(rating || 0),
-
-isFeatured,
-isBestSeller,
-isNewArrival,
-  
-
-  tags: JSON.stringify(
-    Array.isArray(tags)
-      ? tags
-      : []
-  ),
-
-  categoryId,
-  gender,
-          basePrice: Number(
-            basePrice
-          ),
-          salePrice: salePrice
-            ? Number(
-                salePrice
-              )
-            : null,
-          stock: Number(stock),
-          sku,
-          brand:
-            brand || "HairsUp",
-
-          images: {
-            create:
-              Array.isArray(
-                images
-              )
-                ? images.map(
-                  
-                    (
-                      url: string,
-                      index: number
-                    ) => ({
-                      url,
-                      isPrimary:
-                        index === 0,
-                        
-                    })
-                  )
-                : [],
-          },
-          
-          features: {
-  create: Array.isArray(features)
-    ? features
-    : [],
-},
-
-faqs: {
-  create: Array.isArray(faqs)
-    ? faqs
-    : [],
-},
-
-careGuides: {
-  create: Array.isArray(careGuides)
-    ? careGuides
-    : [],
-},
-
-includedItems: {
-  create: Array.isArray(includedItems)
-    ? includedItems
-    : [],
-},
-          
-        },
-
-       include: {
-  images: true,
-  features: true,
-  faqs: true,
-  careGuides: true,
-  includedItems: true,
-},
-      });
-
-    res.status(201).json({
-      success: true,
-      data: product,
-    });
-  } catch (error: any) {
-  console.error(
-    "CREATE PRODUCT ERROR:"
-  );
-
-  console.error(error);
-
-  res.status(500).json({
-    success: false,
-    message:
-      error?.message ||
-      "Failed to create product",
-  });
-}
-};
-
-export const updateProduct = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  const { id } = req.params;
-
-const {
-  name,
-  slug,
-  shortDesc,
-  description,
-  categoryId,
-  gender,
-  basePrice,
-  salePrice,
-  stock,
-  sku,
-  brand,
-  tags,
-  images,
-
-  material,
-  capSize,
-  length,
-  density,
-  texture,
-  color,
-
-  rating,
-
-  isFeatured,
-  isBestSeller,
-  isNewArrival,
-  features,
-faqs,
-careGuides,
-includedItems,
-} = req.body;
-
-  // Delete old images
-  await prisma.productImage.deleteMany({
-    where: {
-      productId: id,
-    },
-  });
-await prisma.productFeature.deleteMany({
-  where: {
-    productId: id,
-  },
-});
-
-await prisma.productFAQ.deleteMany({
-  where: {
-    productId: id,
-  },
-});
-
-await prisma.careGuide.deleteMany({
-  where: {
-    productId: id,
-  },
-});
-
-await prisma.includedItem.deleteMany({
-  where: {
-    productId: id,
-  },
-});
-  const product = await prisma.product.update({
-    where: { id },
-
-    data: {
+    const {
       name,
       slug,
       shortDesc,
       description,
       categoryId,
       gender,
-      material,
-capSize,
-length,
-density,
-texture,
-color,
-
-rating: Number(rating || 0),
-
-isFeatured,
-isBestSeller,
-isNewArrival,
-      basePrice: Number(basePrice),
-      salePrice: salePrice
-        ? Number(salePrice)
-        : null,
-      stock: Number(stock),
+      basePrice,
+      salePrice,
+      stock,
       sku,
       brand,
+      tags,
+      images,
+      material,
+      capSize,
+      length,
+      density,
+      texture,
+      color,
+      rating,
+      isFeatured,
+      isBestSeller,
+      isNewArrival,
+      features,
+      faqs,
+      careGuides,
+      includedItems,
+    } = req.body;
 
-      tags: JSON.stringify(
-        Array.isArray(tags)
-          ? tags
-          : typeof tags === "string"
-          ? tags
-              .split(",")
-              .map((t) => t.trim())
-          : []
-      ),
+    const normalizedName = String(name || '').trim() || 'New Product';
+    const normalizedSlug = String(slug || '').trim() || `${normalizedName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
+    const normalizedDescription = String(description || '').trim();
 
-      images: {
-        create: Array.isArray(images)
-          ? images.map(
-              (
-                url: string,
-                index: number
-              ) => ({
-                url,
-                isPrimary:
-                  index === 0,
-              })
-            )
-          : [],
+    const parseArrayField = (value: unknown): any[] => {
+      if (Array.isArray(value)) {
+        return value;
+      }
+
+      if (typeof value === 'string') {
+        try {
+          const parsed = JSON.parse(value);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+
+      return [];
+    };
+
+    const parseBoolean = (value: unknown): boolean => {
+      if (typeof value === 'boolean') {
+        return value;
+      }
+
+      if (typeof value === 'string') {
+        return value.toLowerCase() === 'true';
+      }
+
+      return false;
+    };
+
+    const normalizedTags = parseArrayField(tags);
+    const normalizedFeatures = parseArrayField(features);
+    const normalizedFaqs = parseArrayField(faqs);
+    const normalizedCareGuides = parseArrayField(careGuides);
+    const normalizedIncludedItems = parseArrayField(includedItems);
+    const normalizedImages = Array.isArray(images)
+      ? images.map((image: any, index: number) => {
+          if (typeof image === 'string') {
+            return {
+              url: image,
+              isPrimary: index === 0,
+            };
+          }
+
+          return {
+            url: image?.url || '',
+            isPrimary: index === 0,
+          };
+        })
+      : [];
+
+    let resolvedCategoryId = String(categoryId || '').trim();
+
+    if (!resolvedCategoryId) {
+      const fallbackCategory = await prisma.category.findFirst();
+
+      if (!fallbackCategory) {
+        res.status(400).json({
+          success: false,
+          message: 'No categories available. Create a category first.',
+        });
+        return;
+      }
+
+      resolvedCategoryId = fallbackCategory.id;
+    } else {
+      const categoryExists = await prisma.category.findUnique({
+        where: {
+          id: resolvedCategoryId,
+        },
+      });
+
+      if (!categoryExists) {
+        const fallbackCategory = await prisma.category.findFirst();
+
+        if (!fallbackCategory) {
+          res.status(400).json({
+            success: false,
+            message: 'The selected category was not found.',
+          });
+          return;
+        }
+
+        resolvedCategoryId = fallbackCategory.id;
+      }
+    }
+
+    const product = await prisma.product.create({
+      data: {
+        name: normalizedName,
+        slug: normalizedSlug,
+        description: normalizedDescription,
+        shortDesc: shortDesc || normalizedDescription,
+        material,
+        capSize,
+        length,
+        density,
+        texture,
+        color,
+        rating: Number(rating || 0),
+        isFeatured: parseBoolean(isFeatured),
+        isBestSeller: parseBoolean(isBestSeller),
+        isNewArrival: parseBoolean(isNewArrival),
+        tags: JSON.stringify(normalizedTags),
+        category: {
+          connect: {
+            id: resolvedCategoryId,
+          },
+        },
+        gender: gender || 'UNISEX',
+        basePrice: Number(basePrice || 0),
+        salePrice: salePrice ? Number(salePrice) : null,
+        stock: Number(stock || 0),
+        sku: sku || `SKU-${Date.now()}`,
+        brand: brand || 'Allendesi',
+        images: {
+          create: normalizedImages.filter((image) => image.url),
+        },
+        features: {
+          create: normalizedFeatures,
+        },
+        faqs: {
+          create: normalizedFaqs,
+        },
+        careGuides: {
+          create: normalizedCareGuides,
+        },
+        includedItems: {
+          create: normalizedIncludedItems,
+        },
       },
-      features: {
-  create: Array.isArray(features)
-    ? features
-    : [],
-},
+      include: {
+        images: true,
+        features: true,
+        faqs: true,
+        careGuides: true,
+        includedItems: true,
+      },
+    });
 
-faqs: {
-  create: Array.isArray(faqs)
-    ? faqs
-    : [],
-},
+    res.status(201).json({
+      success: true,
+      data: product,
+    });
+  } catch (error: any) {
+    console.error('CREATE PRODUCT ERROR:');
+    console.error(error);
 
-careGuides: {
-  create: Array.isArray(careGuides)
-    ? careGuides
-    : [],
-},
+    res.status(500).json({
+      success: false,
+      message: error?.message || 'Failed to create product',
+    });
+  }
+};
 
-includedItems: {
-  create: Array.isArray(includedItems)
-    ? includedItems
-    : [],
-},
-    },
+export const updateProduct = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
 
-    include: {
-  images: true,
-  features: true,
-  faqs: true,
-  careGuides: true,
-  includedItems: true,
-},
-  });
+    const {
+      name,
+      slug,
+      shortDesc,
+      description,
+      categoryId,
+      gender,
+      basePrice,
+      salePrice,
+      stock,
+      sku,
+      brand,
+      tags,
+      images,
+      material,
+      capSize,
+      length,
+      density,
+      texture,
+      color,
+      rating,
+      isFeatured,
+      isBestSeller,
+      isNewArrival,
+      features,
+      faqs,
+      careGuides,
+      includedItems,
+    } = req.body;
 
-  res.json({
-    success: true,
-    data: product,
-  });
+    let resolvedCategoryId = String(categoryId || '').trim();
+
+    if (!resolvedCategoryId) {
+      const fallbackCategory = await prisma.category.findFirst();
+      if (!fallbackCategory) {
+        res.status(400).json({
+          success: false,
+          message: 'No categories available. Create a category first.',
+        });
+        return;
+      }
+      resolvedCategoryId = fallbackCategory.id;
+    } else {
+      const existingCategory = await prisma.category.findUnique({
+        where: { id: resolvedCategoryId },
+      });
+
+      if (!existingCategory) {
+        const fallbackCategory = await prisma.category.findFirst();
+        if (!fallbackCategory) {
+          res.status(400).json({
+            success: false,
+            message: 'The selected category was not found.',
+          });
+          return;
+        }
+        resolvedCategoryId = fallbackCategory.id;
+      }
+    }
+
+    await prisma.productImage.deleteMany({
+      where: {
+        productId: id,
+      },
+    });
+    await prisma.productFeature.deleteMany({
+      where: {
+        productId: id,
+      },
+    });
+
+    await prisma.productFAQ.deleteMany({
+      where: {
+        productId: id,
+      },
+    });
+
+    await prisma.careGuide.deleteMany({
+      where: {
+        productId: id,
+      },
+    });
+
+    await prisma.includedItem.deleteMany({
+      where: {
+        productId: id,
+      },
+    });
+
+    const product = await prisma.product.update({
+      where: { id },
+      data: {
+        name,
+        slug,
+        shortDesc,
+        description,
+        category: {
+          connect: {
+            id: resolvedCategoryId,
+          },
+        },
+        gender: gender || 'UNISEX',
+        material,
+        capSize,
+        length,
+        density,
+        texture,
+        color,
+        rating: Number(rating || 0),
+        isFeatured: Boolean(isFeatured),
+        isBestSeller: Boolean(isBestSeller),
+        isNewArrival: Boolean(isNewArrival),
+        basePrice: Number(basePrice || 0),
+        salePrice: salePrice ? Number(salePrice) : null,
+        stock: Number(stock || 0),
+        sku,
+        brand,
+        tags: JSON.stringify(
+          Array.isArray(tags)
+            ? tags
+            : typeof tags === 'string'
+            ? tags.split(',').map((t) => t.trim())
+            : []
+        ),
+        images: {
+          create: Array.isArray(images)
+            ? images.map((url: string, index: number) => ({
+                url,
+                isPrimary: index === 0,
+              }))
+            : [],
+        },
+        features: {
+          create: Array.isArray(features) ? features : [],
+        },
+        faqs: {
+          create: Array.isArray(faqs) ? faqs : [],
+        },
+        careGuides: {
+          create: Array.isArray(careGuides) ? careGuides : [],
+        },
+        includedItems: {
+          create: Array.isArray(includedItems) ? includedItems : [],
+        },
+      },
+      include: {
+        images: true,
+        features: true,
+        faqs: true,
+        careGuides: true,
+        includedItems: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: product,
+    });
+  } catch (error: any) {
+    console.error('UPDATE PRODUCT ERROR:', error);
+    res.status(500).json({
+      success: false,
+      message: error?.message || 'Failed to update product',
+    });
+  }
 };
 
 

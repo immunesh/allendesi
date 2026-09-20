@@ -8,13 +8,13 @@ async function main() {
 
   const adminPassword = await bcrypt.hash('Admin@123', 12);
   await prisma.user.upsert({
-    where: { email: 'admin@hairsup.com' },
+    where: { email: 'admin@Allendesi.com' },
     update: {},
     create: {
-      email: 'admin@hairsup.com',
+      email: 'admin@Allendesi.com',
       password: adminPassword,
       firstName: 'Admin',
-      lastName: 'HairsUp',
+      lastName: 'Allendesi',
       role: 'ADMIN',
     },
   });
@@ -311,16 +311,16 @@ async function main() {
     create: { code: 'FIRST20', type: 'PERCENTAGE', value: 20, minOrder: 1000, maxDiscount: 500 },
   });
   await prisma.coupon.upsert({
-    where: { code: 'HAIRSUP200' },
+    where: { code: 'Allendesi200' },
     update: {},
-    create: { code: 'HAIRSUP200', type: 'FIXED', value: 200, minOrder: 2000 },
+    create: { code: 'Allendesi200', type: 'FIXED', value: 200, minOrder: 2000 },
   });
 
   const storeHours = JSON.stringify({ mon: '10:00-21:00', tue: '10:00-21:00', wed: '10:00-21:00', thu: '10:00-21:00', fri: '10:00-22:00', sat: '10:00-22:00', sun: '11:00-20:00' });
   const stores = [
-    { name: 'HairsUp Mumbai Flagship', address: 'Ground Floor, Phoenix Palladium, Senapati Bapat Marg', city: 'Mumbai', state: 'Maharashtra', pincode: '400013', phone: '+91 98765 43210', email: 'mumbai@hairsup.com', hours: storeHours, lat: 19.076, lng: 72.8777 },
-    { name: 'HairsUp Delhi Select', address: 'Level 2, Select Citywalk, Saket', city: 'New Delhi', state: 'Delhi', pincode: '110017', phone: '+91 98765 43211', email: 'delhi@hairsup.com', hours: storeHours, lat: 28.5274, lng: 77.2193 },
-    { name: 'HairsUp Bangalore Forum', address: 'Forum Mall, Hosur Road, Koramangala', city: 'Bangalore', state: 'Karnataka', pincode: '560095', phone: '+91 98765 43212', email: 'bangalore@hairsup.com', hours: storeHours, lat: 12.9352, lng: 77.6245 },
+    { name: 'Allendesi Mumbai Flagship', address: 'Ground Floor, Phoenix Palladium, Senapati Bapat Marg', city: 'Mumbai', state: 'Maharashtra', pincode: '400013', phone: '+91 98765 43210', email: 'mumbai@Allendesi.com', hours: storeHours, lat: 19.076, lng: 72.8777 },
+    { name: 'Allendesi Delhi Select', address: 'Level 2, Select Citywalk, Saket', city: 'New Delhi', state: 'Delhi', pincode: '110017', phone: '+91 98765 43211', email: 'delhi@Allendesi.com', hours: storeHours, lat: 28.5274, lng: 77.2193 },
+    { name: 'Allendesi Bangalore Forum', address: 'Forum Mall, Hosur Road, Koramangala', city: 'Bangalore', state: 'Karnataka', pincode: '560095', phone: '+91 98765 43212', email: 'bangalore@Allendesi.com', hours: storeHours, lat: 12.9352, lng: 77.6245 },
   ];
   for (const store of stores) {
     await prisma.storeLocation.upsert({
@@ -339,7 +339,7 @@ async function main() {
       excerpt: 'Everything you need to know before buying your first wig.',
       content: '<h2>Finding Your Perfect Wig</h2><p>Choosing your first wig can feel overwhelming...</p>',
       image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800',
-      author: 'HairsUp Expert Team',
+      author: 'Allendesi Expert Team',
       tags: JSON.stringify(['beginner', 'guide', 'wig care']),
       isPublished: true,
       publishedAt: new Date(),

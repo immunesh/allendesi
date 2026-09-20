@@ -258,7 +258,7 @@ export default function CartSidebar() {
                     <p className="text-[10px] text-red-500 font-medium">{couponError}</p>
                   )}
                   <div className="flex flex-wrap gap-1.5 mt-1.5">
-                    {['FIRST20', 'HAIRSUP200'].map((code) => (
+                    {['FIRST20', 'Allendesi200'].map((code) => (
                       <button
                         key={code}
                         onClick={() => {

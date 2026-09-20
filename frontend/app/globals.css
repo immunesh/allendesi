@@ -6,9 +6,9 @@
 
 @layer base {
   :root {
-    --brand: #c855f5;
-    --brand-dark: #9420c4;
-    --gold: #F59E0B;
+    --brand: #dc2626;
+    --brand-dark: #991b1b;
+    --gold: #f59e0b;
   }
 
   * {
@@ -17,46 +17,77 @@
 
   html {
     scroll-behavior: smooth;
+    background-color: #050505;
   }
 
   body {
-    @apply font-sans text-gray-900 bg-white antialiased;
+    @apply font-sans antialiased;
+    background:
+      radial-gradient(circle at top left, rgba(220, 38, 38, 0.22), transparent 32%),
+      radial-gradient(circle at top right, rgba(255, 82, 82, 0.14), transparent 22%),
+      #050505;
+    color: #f5f5f5;
+    min-height: 100vh;
   }
 
   h1,
   h2,
   h3 {
     @apply font-display;
+    color: #ffffff;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-full transition-all duration-200 shadow-md hover:shadow-glow active:scale-95;
+    @apply font-semibold px-6 py-3 rounded-full transition-all duration-200 shadow-lg hover:shadow-[0_0_30px_rgba(220,38,38,0.35)] active:scale-95;
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: #fff;
   }
 
   .btn-secondary {
-    @apply border-2 border-brand-600 text-brand-600 hover:bg-brand-600 hover:text-white font-semibold px-6 py-3 rounded-full transition-all duration-200 active:scale-95;
+    @apply border-2 font-semibold px-6 py-3 rounded-full transition-all duration-200 active:scale-95;
+    border-color: #dc2626;
+    color: #dc2626;
+    background-color: rgba(0, 0, 0, 0.35);
+  }
+
+  .btn-secondary:hover {
+    background-color: #dc2626;
+    color: #fff;
   }
 
   .btn-ghost {
-    @apply text-gray-700 hover:bg-gray-100 font-medium px-4 py-2 rounded-lg transition-all duration-200;
+    @apply font-medium px-4 py-2 rounded-lg transition-all duration-200;
+    color: #f3f4f6;
+    background: transparent;
+  }
+
+  .btn-ghost:hover {
+    background-color: rgba(220, 38, 38, 0.12);
+    color: #fff;
   }
 
   .card {
-    @apply bg-white rounded-2xl shadow-product hover:shadow-product-hover transition-shadow duration-300;
+    @apply rounded-2xl border border-red-950/50 shadow-[0_10px_40px_rgba(0,0,0,0.35)] transition-shadow duration-300;
+    background: linear-gradient(145deg, rgba(17, 17, 17, 0.98), rgba(8, 8, 8, 0.98));
   }
 
   .input-field {
-    @apply w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white;
+    @apply w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all duration-200;
+    background-color: #111111;
+    border: 1px solid #2b2b2b;
+    color: #f5f5f5;
   }
 
   .section-title {
-    @apply text-3xl md:text-4xl font-display font-bold text-gray-900 mb-2;
+    @apply text-3xl md:text-4xl font-display font-bold mb-2;
+    color: #fff;
   }
 
   .section-subtitle {
-    @apply text-gray-500 text-lg mb-8;
+    @apply text-lg mb-8;
+    color: #9ca3af;
   }
 
   .badge {
@@ -64,39 +95,55 @@
   }
 
   .badge-sale {
-    @apply badge bg-red-100 text-red-700;
+    @apply badge;
+    background-color: rgba(220, 38, 38, 0.16);
+    color: #fca5a5;
   }
 
   .badge-new {
-    @apply badge bg-green-100 text-green-700;
+    @apply badge;
+    background-color: rgba(34, 197, 94, 0.16);
+    color: #86efac;
   }
 
   .badge-best {
-    @apply badge bg-amber-100 text-amber-700;
+    @apply badge;
+    background-color: rgba(245, 158, 11, 0.16);
+    color: #fcd34d;
   }
 
   .nav-link {
-    @apply text-gray-700 hover:text-brand-600 font-medium transition-colors duration-200 relative;
+    @apply font-medium transition-colors duration-200 relative;
+    color: #e5e7eb;
+  }
+
+  .nav-link:hover {
+    color: #ef4444;
   }
 
   .price-current {
-    @apply text-xl font-bold text-gray-900;
+    @apply text-xl font-bold;
+    color: #fff;
   }
 
   .price-original {
-    @apply text-sm text-gray-400 line-through ml-2;
+    @apply text-sm line-through ml-2;
+    color: #6b7280;
   }
 
   .price-discount {
-    @apply text-sm font-semibold text-green-600 ml-2;
+    @apply text-sm font-semibold ml-2;
+    color: #f87171;
   }
 
   .star-filled {
-    @apply text-amber-400 fill-amber-400;
+    @apply fill-red-500;
+    color: #ef4444;
   }
 
   .star-empty {
-    @apply text-gray-300 fill-gray-300;
+    @apply fill-gray-700;
+    color: #374151;
   }
 
   .container-custom {
@@ -104,21 +151,25 @@
   }
 
   .page-hero {
-    @apply bg-gradient-to-r from-brand-950 via-brand-800 to-brand-600 text-white;
+    @apply text-white;
+    background: linear-gradient(135deg, #060606 0%, #1a0d0d 45%, #7f1d1d 100%);
   }
 
   .skeleton {
-    @apply animate-pulse bg-gray-200 rounded;
+    @apply animate-pulse rounded;
+    background-color: #1f1f1f;
   }
 
   .divider {
-    @apply border-t border-gray-100 my-6;
+    @apply border-t my-6;
+    border-color: #2a2a2a;
   }
 }
 
 @layer utilities {
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-600 to-purple-400;
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(90deg, #f87171 0%, #dc2626 100%);
   }
 
   .scrollbar-hide {
@@ -135,19 +186,48 @@
   }
 }
 
+.bg-white,
+.bg-gray-50,
+.bg-gray-100 {
+  background-color: #0a0a0a !important;
+}
+
+.text-gray-900,
+.text-gray-800,
+.text-gray-700 {
+  color: #f5f5f5 !important;
+}
+
+.text-gray-600 {
+  color: #d1d5db !important;
+}
+
+.text-gray-500 {
+  color: #9ca3af !important;
+}
+
+.text-gray-400 {
+  color: #6b7280 !important;
+}
+
+.border-gray-200,
+.border-gray-100 {
+  border-color: #2a2a2a !important;
+}
+
 /* Swiper overrides */
 .swiper-pagination-bullet-active {
-  background: #c855f5 !important;
+  background: #dc2626 !important;
 }
 
 /* Image gallery overrides */
 .image-gallery-thumbnail.active,
 .image-gallery-thumbnail:focus {
-  border-color: #c855f5 !important;
+  border-color: #dc2626 !important;
 }
 
 .image-gallery-icon:hover {
-  color: #c855f5 !important;
+  color: #dc2626 !important;
 }
 
 .hide-scrollbar::-webkit-scrollbar {

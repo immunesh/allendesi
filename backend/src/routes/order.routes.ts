@@ -1,19 +1,19 @@
 import { Router } from 'express';
 import {
-createOrder,
-getOrders,
-getOrderById,
-cancelOrder,
-getAdminOrders,
-getAdminOrderById,
-updateOrderStatus,
-createShipment,
-updateShipment,
+  createOrder,
+  getOrders,
+  getOrderById,
+  cancelOrder,
+  getAdminOrders,
+  getAdminOrderById,
+  updateOrderStatus,
+  createShipment,
+  updateShipment,
+  getSellerOrders,
+  updateSellerOrderDecision,
 } from '../controllers/order.controller';
-import { authenticate } from '../middleware/auth.middleware';
-import {
-  authorize,
-} from "../middleware/auth.middleware";
+import { authenticate, authorize } from '../middleware/auth.middleware';
+
 const router = Router();
 router.use(authenticate);
 
@@ -38,18 +38,23 @@ router.put(
 
 router.post(
   "/admin/:id/shipment",
-  authorize("ADMIN"),
+  authorize("ADMIN", "SELLER"),
   createShipment
 );
 
 router.put(
   "/admin/:id/shipment",
-  authorize("ADMIN"),
+  authorize("ADMIN", "SELLER"),
   updateShipment
 );
-/* CUSTOMER */
+
+/* SELLER & CUSTOMER */
 router.post('/', createOrder);
 router.get('/', getOrders);
+router.get('/seller', authorize('SELLER', 'ADMIN'), getSellerOrders);
+router.patch('/:id/seller/status', authorize('SELLER', 'ADMIN'), updateSellerOrderDecision);
+router.post('/seller/:id/shipment', authorize('SELLER', 'ADMIN'), createShipment);
+router.put('/seller/:id/shipment', authorize('SELLER', 'ADMIN'), updateShipment);
 router.get('/:id', getOrderById);
 router.patch('/:id/cancel', cancelOrder);
 

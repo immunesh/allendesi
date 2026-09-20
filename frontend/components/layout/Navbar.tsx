@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Search, ShoppingBag, Heart, User, Menu, X, ChevronDown,
-  Phone, MapPin, Sparkles, LogOut, Package, Home,
+  Phone, MapPin, Sparkles, LogOut, Package, Home, Store,
 } from 'lucide-react';
 import { useAuthStore, useCartStore, useWishlistStore, useUIStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
@@ -43,10 +43,10 @@ const NAV_LINKS = [
       { label: 'Best Sellers', href: '/men?bestSeller=true' },
     ],
   },
-  { label: 'Virtual Try-On', href: '/try-on' },
   { label: 'Blog', href: '/blog' },
   { label: 'Shop', href: '/shop' },
   { label: 'Stores', href: '/stores' },
+  { label: 'Become a Seller', href: '/seller/register' },
 ];
 
 export default function Navbar() {
@@ -97,7 +97,7 @@ export default function Navbar() {
         <div className="container-custom flex justify-between items-center">
           <div className="flex items-center gap-6">
             <span className="flex items-center gap-1.5">
-              <Phone className="w-3 h-3" /> +91 1800-HairsUp (Free)
+              <Phone className="w-3 h-3" /> +91 1800-Allendesi (Free)
             </span>
             <span className="flex items-center gap-1.5">
               <MapPin className="w-3 h-3" /> 50+ Stores across India
@@ -123,7 +123,7 @@ export default function Navbar() {
               <div className="w-8 h-8 bg-gradient-to-br from-brand-600 to-brand-800 rounded-lg flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
-              <span className="text-2xl font-display font-bold text-gradient">HairsUp</span>
+              <span className="text-2xl font-display font-bold text-gradient">Allendesi</span>
             </Link>
 
             {/* Desktop Nav */}
@@ -363,6 +363,11 @@ export default function Navbar() {
                   <Link href="/profile" onClick={closeMobileMenu} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50">
                     <User className="w-5 h-5 text-gray-500" /> Profile
                   </Link>
+                  {user?.role === 'SELLER' && (
+                    <Link href="/seller" onClick={closeMobileMenu} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50">
+                      <Store className="w-5 h-5 text-gray-500" /> Seller Dashboard
+                    </Link>
+                  )}
                   <button onClick={handleLogout} className="flex items-center gap-3 w-full p-3 rounded-xl text-red-600 hover:bg-red-50">
                     <LogOut className="w-5 h-5" /> Logout
                   </button>

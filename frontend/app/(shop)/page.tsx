@@ -29,6 +29,8 @@ const GENDER_BADGE: Record<string, string> = {
   UNISEX: 'Unisex',
 };
 
+const NEUTRAL_HERO_ACCENT = 'from-slate-950 to-slate-700';
+
 const DEFAULT_HERO_SLIDES = [
   {
     id: 1,
@@ -37,11 +39,11 @@ const DEFAULT_HERO_SLIDES = [
     description: "India's finest collection of 100% human hair wigs and hair systems. Look naturally stunning every day.",
     cta: 'Shop Women\'s Collection',
     ctaLink: '/women',
-    ctaSecondary: 'Try On Virtually',
-    ctaSecondaryLink: '/try-on',
+    ctaSecondary: 'Explore New Arrivals',
+    ctaSecondaryLink: '/products?newArrival=true',
     badge: 'New Season Collection',
     image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1200&q=80',
-    accent: 'from-brand-950 to-brand-700',
+    accent: NEUTRAL_HERO_ACCENT,
     tag: 'WOMEN',
   },
   {
@@ -55,21 +57,21 @@ const DEFAULT_HERO_SLIDES = [
     ctaSecondaryLink: '/contact',
     badge: 'Clinically Endorsed',
     image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=1200&q=80',
-    accent: 'from-gray-900 to-brand-900',
+    accent: NEUTRAL_HERO_ACCENT,
     tag: 'MEN',
   },
   {
     id: 3,
-    headline: 'See It Before',
-    subheadline: 'You Buy It — Virtual Try-On',
-    description: 'Experience the future of wig shopping. Use our AI-powered virtual try-on to find your perfect match.',
-    cta: 'Try On Now — Free',
-    ctaLink: '/try-on',
-    ctaSecondary: 'How It Works',
-    ctaSecondaryLink: '/blog/virtual-try-on',
-    badge: 'AI-Powered Technology',
+    headline: 'Discover Your Style',
+    subheadline: 'Curated Wigs for Every Mood',
+    description: 'Browse premium wigs and hair systems chosen for comfort, quality, and a natural finish.',
+    cta: 'Shop Best Sellers',
+    ctaLink: '/products?bestSeller=true',
+    ctaSecondary: 'See Fresh Arrivals',
+    ctaSecondaryLink: '/products?newArrival=true',
+    badge: 'New Styles Added',
     image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=1200&q=80',
-    accent: 'from-purple-950 to-brand-700',
+    accent: NEUTRAL_HERO_ACCENT,
     tag: 'NEW',
   },
 ];
@@ -94,7 +96,7 @@ const TESTIMONIALS = [
     name: 'Priya Sharma',
     location: 'Mumbai',
     rating: 5,
-    text: 'I was skeptical at first, but HairsUp completely changed my life! The lace front wig looks so natural — nobody can tell! The virtual try-on helped me pick the perfect style.',
+    text: 'I was skeptical at first, but Allendesi completely changed my life! The lace front wig looks so natural — nobody can tell! The virtual try-on helped me pick the perfect style.',
     product: 'Silky Straight Lace Front Wig',
     image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
   },
@@ -129,7 +131,12 @@ const [blogs, setBlogs] = useState<any[]>([]);
       try {
         const data = await getHeroSlides(true);
         if (Array.isArray(data) && data.length > 0) {
-          setHeroSlides(data);
+          setHeroSlides(
+            data.map((slide: any) => ({
+              ...slide,
+              accent: NEUTRAL_HERO_ACCENT,
+            }))
+          );
           setHeroSlide(0);
         }
       } catch (error) {
@@ -279,7 +286,7 @@ useEffect(() => {
             className="object-cover"
             priority
           />
-          <div className={`absolute inset-0 bg-gradient-to-r ${slide.accent || 'from-brand-950 to-brand-700'} opacity-85`} />
+          <div className={`absolute inset-0 bg-gradient-to-r ${NEUTRAL_HERO_ACCENT} opacity-85`} />
         </div>
 
         {/* Content */}
@@ -287,7 +294,7 @@ useEffect(() => {
           <div className={`max-w-2xl text-white transition-all duration-500 ${isSliding ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
             {slide.badge && (
               <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-sm font-semibold mb-6">
-                <Sparkles className="w-4 h-4 text-brand-300" />
+                <Sparkles className="w-4 h-4 text-slate-200" />
                 {slide.badge}
               </div>
             )}
@@ -295,7 +302,7 @@ useEffect(() => {
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-display font-bold leading-tight mb-4">
               {slide.headline}
               <br />
-              <span className="text-brand-300">{slide.subheadline}</span>
+              <span className="text-slate-200">{slide.subheadline}</span>
             </h1>
 
             <p className="text-lg text-white/80 mb-8 max-w-lg leading-relaxed">
@@ -304,7 +311,7 @@ useEffect(() => {
 
             <div className="flex flex-wrap items-center gap-4">
               {slide.cta && slide.ctaLink && (
-                <Link href={slide.ctaLink} className="btn-primary bg-white text-brand-700 hover:bg-brand-50 text-base py-3.5 px-8 flex items-center gap-2">
+                <Link href={slide.ctaLink} className="btn-primary bg-white text-slate-900 hover:bg-slate-100 text-base py-3.5 px-8 flex items-center gap-2">
                   {slide.cta} <ArrowRight className="w-5 h-5" />
                 </Link>
               )}
@@ -327,7 +334,7 @@ useEffect(() => {
           {slide.tag && (
             <div className="absolute top-8 right-8 hidden lg:block">
               <div className="bg-white/15 backdrop-blur-sm border border-white/20 rounded-2xl px-5 py-3 text-white text-center">
-                <div className="text-xs font-semibold text-brand-300 mb-1">COLLECTION</div>
+                <div className="text-xs font-semibold text-slate-200 mb-1">COLLECTION</div>
                 <div className="text-2xl font-display font-bold">{slide.tag}</div>
               </div>
             </div>
@@ -470,7 +477,7 @@ useEffect(() => {
         </div>
       </section>
 
-      {/* ─── PROMO BANNER (Try On) ───────────────────────────────── */}
+      {/* ─── PROMO BANNER ───────────────────────────────────────── */}
       <section className="py-16">
         <div className="container-custom">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-brand-950 via-brand-800 to-purple-700 text-white p-8 md:p-14">
@@ -479,30 +486,29 @@ useEffect(() => {
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
               <div className="flex-1">
                 <div className="inline-flex items-center gap-2 bg-white/15 rounded-full px-3 py-1.5 text-sm font-semibold mb-4">
-                  <Zap className="w-4 h-4 text-yellow-300" /> AI-Powered Feature
+                  <Zap className="w-4 h-4 text-yellow-300" /> Curated Collection
                 </div>
                 <h2 className="text-3xl md:text-4xl font-display font-bold mb-3">
-                  Try Before You Buy
+                  Discover Your Signature Look
                 </h2>
                 <p className="text-white/75 text-lg mb-6 max-w-md">
-                  Our revolutionary virtual try-on uses AI to overlay any wig on your live camera feed.
-                  See exactly how you&apos;ll look before adding to your bag.
+                  Shop premium wigs and hair systems chosen for comfort, quality, and a natural finish.
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  <Link href="/try-on" className="bg-white text-brand-700 font-bold px-6 py-3 rounded-full hover:bg-brand-50 transition-colors flex items-center gap-2">
-                    <Zap className="w-4 h-4" /> Try On Free Now
+                  <Link href="/women" className="bg-white text-brand-700 font-bold px-6 py-3 rounded-full hover:bg-brand-50 transition-colors flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" /> Shop Women&apos;s Wigs
                   </Link>
-                  <Link href="/blog" className="border border-white/40 hover:border-white text-white px-6 py-3 rounded-full transition-all hover:bg-white/10 flex items-center gap-2">
-                    Learn More
+                  <Link href="/men" className="border border-white/40 hover:border-white text-white px-6 py-3 rounded-full transition-all hover:bg-white/10 flex items-center gap-2">
+                    Shop Men&apos;s Hair Systems
                   </Link>
                 </div>
               </div>
               <div className="flex-shrink-0">
                 <div className="w-52 h-52 bg-white/10 rounded-3xl flex items-center justify-center backdrop-blur-sm border border-white/20">
                   <div className="text-center">
-                    <div className="text-5xl font-display font-bold text-white mb-1">360°</div>
-                    <div className="text-brand-300 text-sm font-medium">Product View</div>
-                    <div className="text-white/50 text-xs mt-2">Drag to rotate</div>
+                    <div className="text-5xl font-display font-bold text-white mb-1">100%</div>
+                    <div className="text-brand-300 text-sm font-medium">Premium Quality</div>
+                    <div className="text-white/50 text-xs mt-2">Trusted by customers</div>
                   </div>
                 </div>
               </div>
@@ -617,7 +623,7 @@ useEffect(() => {
       <section className="py-16 container-custom">
         <div className="text-center mb-12">
           <h2 className="section-title">Real Stories. Real Confidence.</h2>
-          <p className="section-subtitle">See what our customers say about HairsUp</p>
+          <p className="section-subtitle">See what our customers say about Allendesi</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">

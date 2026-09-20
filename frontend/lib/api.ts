@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const DEFAULT_API_URL = 'http://localhost:5000/api';
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_URL).replace(/\/+$/, '');
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -44,8 +45,8 @@ api.interceptors.response.use(
 
 // Auth
 export const authApi = {
-  register: (data: Record<string, string>) => api.post('/auth/register', data),
-  login: (email: string, password: string) => api.post('/auth/login', { email, password }),
+  register: (data: Record<string, unknown>) => api.post('/auth/register', data),
+  login: (email: string, password: string, role?: string) => api.post('/auth/login', { email, password, role }),
   logout: (refreshToken: string) => api.post('/auth/logout', { refreshToken }),
   getMe: () => api.get('/auth/me'),
 };

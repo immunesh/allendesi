@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { ArrowRight, Clock, User } from 'lucide-react';
 import { getAllBlogs } from "@/lib/blog-api";
 export const metadata: Metadata = {
-  title: 'Hair Care Blog & Style Guides | HairsUp',
-  description: 'Expert hair care tips, styling guides, and inspiration from the HairsUp team. Everything you need to know about wigs and hair systems.',
+  title: 'Hair Care Blog & Style Guides | Allendesi',
+  description: 'Expert hair care tips, styling guides, and inspiration from the Allendesi team. Everything you need to know about wigs and hair systems.',
 };
 
  

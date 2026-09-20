@@ -118,7 +118,7 @@ self-start
               text-transparent
             "
           >
-            HairsUp
+            Allendesi
           </h1>
 
           <p className="text-xs text-slate-400">

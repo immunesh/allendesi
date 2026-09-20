@@ -120,7 +120,7 @@ export default function AdminLoginPage() {
           text-transparent
           "
         >
-          HairsUp Admin
+          Allendesi Admin
         </h1>
 
         <p className="text-slate-400 mt-3">
@@ -272,7 +272,7 @@ export default function AdminLoginPage() {
       {/* Footer */}
       <div className="mt-8 text-center">
         <p className="text-xs text-slate-500">
-          HairsUp Administration Panel
+          Allendesi Administration Panel
         </p>
       </div>
     </div>

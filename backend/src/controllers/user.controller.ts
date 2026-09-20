@@ -111,9 +111,14 @@ export const updateUserRole = async (
   const { id } = req.params;
   const { role } = req.body;
 
+  const normalizedRole = String(role || 'CUSTOMER').toUpperCase();
+  const safeRole = ['ADMIN', 'SELLER', 'CUSTOMER'].includes(normalizedRole)
+    ? normalizedRole
+    : 'CUSTOMER';
+
   const user = await prisma.user.update({
     where: { id },
-    data: { role },
+    data: { role: safeRole },
   });
 
   res.json({

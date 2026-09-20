@@ -55,26 +55,42 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
   });
   if (!address) throw new AppError('Address not found', 404);
 
-  const cartItems = await prisma.cartItem.findMany({
-    where: { userId: req.user!.userId },
-    include: { product: { include: { images: { where: { isPrimary: true }, take: 1 } } } },
-  });
+ const cartItems = await prisma.cartItem.findMany({
+  where: { userId: req.user!.userId },
+  include: {
+    product: {
+      select: {
+        id: true,
+        name: true,
+        basePrice: true,
+        salePrice: true,
+        images: {
+          where: { isPrimary: true },
+          take: 1
+        }
+      }
+    }
+  }
+});
   if (!cartItems.length) throw new AppError('Cart is empty', 400);
 
-  let subtotal = 0;
-  const orderItems = cartItems.map((item) => {
-    const price = item.product.salePrice || item.product.basePrice;
-    subtotal += price * item.quantity;
-    return {
-      productId: item.productId,
-      name: item.product.name,
-      image: item.product.images[0]?.url,
-      quantity: item.quantity,
-      price,
-      variant: item.variant,
-    };
-  });
+  const subtotal = cartItems.reduce((sum, item) => {
+    const price = Number(item.product.salePrice ?? item.product.basePrice ?? 0);
+    return sum + price * item.quantity;
+  }, 0);
 
+const orderItems = cartItems.map((item) => {
+  const price = Number(item.product.salePrice ?? item.product.basePrice ?? 0);
+
+  return {
+    productId: item.productId,
+    name: item.product.name,
+    image: item.product.images[0]?.url,
+    quantity: item.quantity,
+    price,
+    variant: item.variant,
+  };
+});
   let discount = 0;
   if (couponCode) {
     const coupon = await prisma.coupon.findFirst({ where: { code: couponCode, isActive: true } });
@@ -105,10 +121,22 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       total,
       couponCode,
       notes,
-      items: { create: orderItems },
       tracking: { create: { status: 'PENDING', message: 'Order placed successfully.' } },
     },
     include: { items: true, address: true, tracking: true },
+  });
+
+  await prisma.orderItem.createMany({
+    data: orderItems.map((item) => ({
+      orderId: order.id,
+      productId: item.productId,
+      sellerId: req.user!.userId,
+      name: item.name,
+      image: item.image ?? null,
+      quantity: item.quantity,
+      price: item.price,
+      variant: item.variant ?? null,
+    }) as any),
   });
 
   await prisma.cartItem.deleteMany({ where: { userId: req.user!.userId } });
@@ -226,6 +254,67 @@ data: order,
 });
 };
 
+export const updateSellerOrderDecision = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const allowedStatuses = ['CONFIRMED', 'CANCELLED', 'DELIVERED', 'SHIPPED'];
+    if (!allowedStatuses.includes(status)) {
+      throw new AppError('Seller update must be CONFIRMED, CANCELLED, DELIVERED or SHIPPED', 400);
+    }
+
+    const existing = await prisma.order.findUnique({ where: { id } });
+
+    if (!existing) throw new AppError('Order not found', 404);
+
+    const validTransitions: Record<string, string[]> = {
+      PENDING: ['CONFIRMED', 'CANCELLED'],
+      CONFIRMED: ['DELIVERED', 'CANCELLED', 'SHIPPED', 'PROCESSING'],
+      PROCESSING: ['DELIVERED', 'CANCELLED', 'SHIPPED'],
+      SHIPPED: ['DELIVERED', 'CANCELLED'],
+      OUT_FOR_DELIVERY: ['DELIVERED', 'CANCELLED'],
+    };
+
+    const allowedTransition = validTransitions[existing.status] || [];
+    if (!allowedTransition.includes(status)) {
+      throw new AppError(`Cannot change status from ${existing.status} to ${status} as a seller`, 400);
+    }
+
+    const order = await prisma.order.update({
+      where: { id },
+      data: {
+        status,
+        deliveredAt: status === 'DELIVERED' ? new Date() : existing.deliveredAt,
+        tracking: {
+          create: {
+            status,
+            message:
+              status === 'CONFIRMED'
+                ? 'Order accepted by seller.'
+                : status === 'DELIVERED'
+                ? 'Order delivered by seller.'
+                : 'Order cancelled by seller.',
+          },
+        },
+      },
+      include: { items: true, address: true, tracking: { orderBy: { createdAt: 'desc' } } },
+    });
+
+    res.json({ success: true, data: order });
+  } catch (error) {
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({ success: false, message: error.message });
+      return;
+    }
+    console.error('Failed to update seller order decision:', error);
+    res.status(500).json({ success: false, message: 'Failed to update seller order decision' });
+  }
+};
+
 export const updateOrderStatus = async (
 req: AuthRequest,
 res: Response
@@ -291,8 +380,8 @@ export const createShipment = async (
     const existing = await prisma.order.findUnique({ where: { id } });
     if (!existing) throw new AppError('Order not found', 404);
 
-    if (existing.status !== 'PROCESSING') {
-      throw new AppError('Order must be in Processing status before it can be shipped', 400);
+    if (!['CONFIRMED', 'PROCESSING'].includes(existing.status)) {
+      throw new AppError('Order must be in Confirmed or Processing status before it can be shipped', 400);
     }
 
     const { courier, awbNumber, trackingUrl, estimatedDelivery } = validateShipmentPayload(req.body);
@@ -375,3 +464,38 @@ export const updateShipment = async (
   }
 };
 
+export const getSellerOrders = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  const orders = await prisma.order.findMany({
+    where: {
+      status: {
+        in: ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'],
+      },
+    },
+    include: {
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      },
+      items: {
+        include: {
+          product: true,
+        },
+      },
+      address: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  res.json({
+    success: true,
+    data: orders,
+  });
+};

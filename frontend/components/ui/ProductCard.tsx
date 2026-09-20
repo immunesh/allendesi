@@ -238,7 +238,7 @@ console.log("CARD", {
           {/* Try-on hint */}
           <div className="flex items-center gap-1 mt-2 text-xs text-brand-600 font-medium">
             <Zap className="w-3 h-3" />
-            <span>Try it virtually</span>
+            <span>Free shipping</span>
           </div>
         </div>
       </div>

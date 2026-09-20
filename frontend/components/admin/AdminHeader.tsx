@@ -53,7 +53,7 @@ export default function AdminHeader() {
           truncate
           "
         >
-          HairsUp Admin
+          Allendesi Admin
         </h1>
 
         <p className="hidden sm:block text-xs text-slate-400">

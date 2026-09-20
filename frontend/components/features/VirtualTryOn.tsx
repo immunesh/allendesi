@@ -508,7 +508,7 @@ console.log(wigImagesRef.current);
     if (!capturedImage) return;
     const a = document.createElement('a');
     a.href = capturedImage;
-    a.download = `hairsup-tryon-${Date.now()}.jpg`;
+    a.download = `Allendesi-tryon-${Date.now()}.jpg`;
     a.click();
   };
 
@@ -680,7 +680,7 @@ showCropper &&
                     <div className="text-center">
                       <h3 className="text-xl font-bold mb-2">Virtual Try-On</h3>
                       <p className="text-gray-400 text-sm max-w-xs">
-                        See how any HairsUp wig looks on you — in real time using your camera.
+                        See how any Allendesi wig looks on you — in real time using your camera.
                       </p>
                     </div>
                     {cameraError && (

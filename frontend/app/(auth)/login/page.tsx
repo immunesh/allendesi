@@ -6,12 +6,15 @@ import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Sparkles, Mail, Lock, Loader2 } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/lib/store';
 import { authApi } from '@/lib/api';
+import { GoogleLogin } from '@react-oauth/google';
+import axios from 'axios';
 
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
   const { showToast } = useUIStore();
   const [form, setForm] = useState({ email: '', password: '' });
+  const [role, setRole] = useState<'CUSTOMER' | 'SELLER'>('CUSTOMER');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -25,18 +28,25 @@ export default function LoginPage() {
     return Object.keys(e).length === 0;
   };
 
+  const finalizeAuth = (user: any, accessToken: string, refreshToken: string, source: string) => {
+    const normalizedUser = { ...user, role: (user.role || 'CUSTOMER').toUpperCase() };
+    setAuth(normalizedUser, accessToken, refreshToken);
+    showToast(source === 'google' ? `Welcome, ${normalizedUser.firstName || normalizedUser.email}!` : `Welcome back, ${normalizedUser.firstName || normalizedUser.email}!`);
+
+    if (normalizedUser.role === 'ADMIN') router.push('/admin');
+    else if (normalizedUser.role === 'SELLER') router.push('/seller');
+    else router.push('/');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
     try {
-      const { data } = await authApi.login(form.email, form.password);
-      const { user, accessToken, refreshToken } = data.data;
-      setAuth(user, accessToken, refreshToken);
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      showToast(`Welcome back, ${user.firstName}!`);
-      router.push('/');
+      const { data } = await authApi.login(form.email, form.password, role);
+      const payload = data?.data ?? data;
+      const { user, accessToken, refreshToken } = payload;
+      finalizeAuth(user, accessToken, refreshToken, 'email');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       showToast(error?.response?.data?.message || 'Invalid credentials', 'error');
@@ -45,119 +55,223 @@ export default function LoginPage() {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
+    if (!credentialResponse.credential) {
+      showToast('Google sign-in was cancelled', 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data } = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/auth/google`, {
+        credential: credentialResponse.credential,
+      }, { withCredentials: true });
+
+      const payload = data?.data ?? data;
+      const { user, accessToken, refreshToken } = payload;
+      finalizeAuth(user, accessToken, refreshToken, 'google');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      showToast(error?.response?.data?.message || 'Google sign-in failed', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex">
-      {/* Left panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-brand-950 via-brand-800 to-purple-700 p-12 flex-col justify-between relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="absolute rounded-full bg-white" style={{
-              width: `${80 + i * 40}px`, height: `${80 + i * 40}px`,
-              top: `${i * 15}%`, left: `${i % 2 === 0 ? -20 : 60}%`, opacity: 0.5,
-            }} />
+    <div className="min-h-screen flex bg-[#050505] text-white">
+      <div className="hidden lg:flex lg:w-1/2 bg-[radial-gradient(circle_at_top_left,_rgba(220,38,38,0.35),_transparent_45%),linear-gradient(135deg,_#0b0b0b,_#1a0a0a)] p-12 flex-col justify-between relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20">
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full border border-red-500/40"
+              style={{
+                width: `${90 + i * 35}px`,
+                height: `${90 + i * 35}px`,
+                top: `${i * 10}%`,
+                left: `${i % 2 === 0 ? -10 : 65}%`,
+              }}
+            />
           ))}
         </div>
-        <Link href="/" className="flex items-center gap-2 relative z-10">
-          <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-white" />
+
+        <Link href="/" className="relative z-10 flex items-center gap-2">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-red-500/40 bg-red-600/20">
+            <Sparkles className="h-5 w-5 text-red-400" />
           </div>
-          <span className="text-2xl font-display font-bold text-white">HairsUp</span>
+          <span className="text-2xl font-semibold tracking-wide text-white">Allendesi</span>
         </Link>
+
         <div className="relative z-10">
-          <h2 className="text-4xl font-display font-bold text-white mb-4">
-            Welcome Back to HairsUp
-          </h2>
-          <p className="text-white/70 text-lg mb-8">
-            Sign in to access your wishlist, orders, and exclusive member offers.
+          <h2 className="mb-4 text-4xl font-semibold text-white">Welcome back to Allendesi</h2>
+          <p className="mb-8 max-w-lg text-lg text-gray-300">
+            Sign in to access your wishlist, orders, and special member offers.
           </p>
           <div className="space-y-4">
-            {['Access your order history & tracking', 'Manage your saved wishlist', 'Exclusive member discounts & offers', 'Virtual try-on saved looks'].map((benefit) => (
-              <div key={benefit} className="flex items-center gap-3 text-white/80">
-                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs text-white">✓</span>
+            {['Track your orders instantly', 'Manage your saved wishlist', 'Unlock exclusive offers', 'Access your virtual try-on looks'].map((benefit) => (
+              <div key={benefit} className="flex items-center gap-3 text-gray-200">
+                <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-red-600/20 text-xs text-red-400">
+                  ✓
                 </div>
                 <span className="text-sm">{benefit}</span>
               </div>
             ))}
           </div>
         </div>
-        <p className="text-white/40 text-xs relative z-10">© 2025 HairsUp Technologies Pvt. Ltd.</p>
+
+        <p className="relative z-10 text-xs text-gray-500">© 2025 Allendesi Technologies Pvt. Ltd.</p>
       </div>
 
-      {/* Right panel */}
-      <div className="flex-1 flex flex-col justify-center px-6 py-12 lg:px-16 bg-white">
-        <div className="max-w-md w-full mx-auto">
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <Sparkles className="w-6 h-6 text-brand-600" />
-            <span className="text-xl font-display font-bold text-gradient">HairsUp</span>
+      <div className="flex-1 bg-[#090909] px-6 py-12 lg:px-16 flex flex-col justify-center">
+        <div className="mx-auto w-full max-w-md">
+          <div className="mb-8 flex items-center gap-2 lg:hidden">
+            <Sparkles className="h-6 w-6 text-red-500" />
+            <span className="text-xl font-semibold text-white">Allendesi</span>
           </div>
 
-          <h1 className="text-3xl font-display font-bold text-gray-900 mb-2">Sign In</h1>
-          <p className="text-gray-500 mb-8">
-            New to HairsUp?{' '}
-            <Link href="/register" className="text-brand-600 font-semibold hover:underline">Create an account</Link>
-          </p>
+          <div className="rounded-3xl border border-red-900/40 bg-[#0f0f0f] p-7 shadow-2xl shadow-red-950/20">
+            <h1 className="mb-2 text-3xl font-semibold text-white">Sign In</h1>
+            <p className="mb-8 text-sm text-gray-400">
+              New to Allendesi?{' '}
+              <Link href="/register" className="font-semibold text-red-400 hover:text-red-300">Create an account</Link>
+            </p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400" />
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="you@example.com"
-                  className={`input-field pl-10 ${errors.email ? 'border-red-400 focus:ring-red-400' : ''}`}
-                />
+            <form onSubmit={handleSubmit} className="space-y-5">
+           <div>
+  <label className="mb-2 block text-sm font-semibold tracking-wide text-red-200">
+    Sign in as
+  </label>
+
+  <div className="relative">
+    <select
+      value={role}
+      onChange={(e) =>
+        setRole(e.target.value as 'CUSTOMER' | 'SELLER')
+      }
+      className="
+        w-full
+        appearance-none
+        rounded-2xl
+        border border-red-800/40
+        bg-black
+        px-4
+        py-3.5
+        pr-12
+        text-sm
+        font-medium
+        text-white
+        shadow-[0_0_0_1px_rgba(220,38,38,0.08)]
+        transition-all
+        duration-200
+        outline-none
+        hover:border-red-600/60
+        hover:bg-[#0b0b0b]
+        focus:border-red-500
+        focus:ring-2
+        focus:ring-red-500/30
+      "
+    >
+      <option value="CUSTOMER" className="bg-black text-white">
+        Customer
+      </option>
+
+      <option value="SELLER" className="bg-black text-white">
+        Seller
+      </option>
+    </select>
+
+    {/* Custom arrow */}
+    <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center">
+      <svg
+        className="h-4 w-4 text-red-400"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M19 9l-7 7-7-7"
+        />
+      </svg>
+    </div>
+  </div>
+
+  <p className="mt-2 text-xs text-gray-500">
+    Choose whether you want to continue as a customer or a seller.
+  </p>
+</div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-300">Email Address</label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    placeholder="you@example.com"
+                    className={`w-full rounded-xl border border-red-950/40 bg-[#121212] py-3 pl-10 pr-3 text-sm text-white outline-none focus:border-red-500 ${errors.email ? 'border-red-500' : ''}`}
+                  />
+                </div>
+                {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email}</p>}
               </div>
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-            </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-gray-700">Password</label>
-                <Link href="/forgot-password" className="text-xs text-brand-600 hover:underline">Forgot password?</Link>
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label className="block text-sm font-medium text-gray-300">Password</label>
+                  <Link href="/forgot-password" className="text-xs text-red-400 hover:text-red-300">Forgot password?</Link>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    placeholder="Enter your password"
+                    className={`w-full rounded-xl border border-red-950/40 bg-[#121212] py-3 pl-10 pr-10 text-sm text-white outline-none focus:border-red-500 ${errors.password ? 'border-red-500' : ''}`}
+                  />
+                  <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
+                    {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password}</p>}
               </div>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type={showPass ? 'text' : 'password'}
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  placeholder="Enter your password"
-                  className={`input-field pl-10 pr-10 ${errors.password ? 'border-red-400 focus:ring-red-400' : ''}`}
-                />
-                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
-            </div>
 
-            <button type="submit" disabled={loading} className="btn-primary w-full py-3.5 text-base flex items-center justify-center gap-2">
-              {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Signing In…</> : 'Sign In'}
-            </button>
-          </form>
-
-          <div className="mt-6 relative">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
-            <div className="relative flex justify-center text-xs text-gray-400 bg-white px-3">OR CONTINUE WITH</div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            {['Google', 'Apple'].map((provider) => (
-              <button key={provider} className="flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                {provider === 'Google' ? '🌐' : '🍎'} {provider}
+              <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 py-3.5 text-sm font-medium text-white transition hover:bg-red-700 disabled:opacity-70">
+                {loading ? <><Loader2 className="h-5 w-5 animate-spin" /> Signing In…</> : 'Sign In'}
               </button>
-            ))}
-          </div>
+            </form>
 
-          <p className="mt-8 text-xs text-gray-400 text-center">
-            By signing in, you agree to our{' '}
-            <Link href="/terms" className="underline">Terms of Service</Link> and{' '}
-            <Link href="/privacy" className="underline">Privacy Policy</Link>.
-          </p>
+            <div className="mt-6 relative">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-800" /></div>
+              <div className="relative flex justify-center bg-[#0f0f0f] px-3 text-[11px] uppercase tracking-[0.25em] text-gray-500">Or continue with</div>
+            </div>
+
+           <div className="mt-4 space-y-3">
+  <div className="flex justify-center">
+    <GoogleLogin
+      useOneTap={false}
+      onSuccess={handleGoogleSuccess}
+      onError={() => {
+        showToast('Google sign-in failed', 'error');
+      }}
+    />
+  </div>
+
+  <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-950/40 bg-[#121212] py-2.5 text-sm font-medium text-gray-200 transition hover:border-red-500/50 hover:bg-[#171717]">
+    🍎 Apple
+  </button>
+</div>
+
+            <p className="mt-8 text-center text-xs text-gray-500">
+              By signing in, you agree to our{' '}
+              <Link href="/terms" className="underline text-gray-400">Terms of Service</Link> and{' '}
+              <Link href="/privacy" className="underline text-gray-400">Privacy Policy</Link>.
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -27,7 +27,7 @@ const SUBCATEGORIES = [
   { label: 'Human Hair', value: 'human-hair' },
 ];
 
-const WHY_HAIRSUP_MEN = [
+const WHY_Allendesi_MEN = [
   { icon: '🔬', title: 'Swiss Lace Technology', desc: 'Ultra-thin lace that disappears on your scalp' },
   { icon: '💧', title: 'Sweat & Water Resistant', desc: 'Live an active life without worry' },
   { icon: '🎨', title: 'Custom Color Matching', desc: 'Match your exact natural hair colour' },
@@ -282,10 +282,10 @@ console.log("RESULTS", list);
         </div>
       </div>
 
-      {/* Why HairsUp for Men */}
+      {/* Why Allendesi for Men */}
       <div className="bg-gray-950 text-white py-8">
         <div className="container-custom grid grid-cols-2 md:grid-cols-4 gap-6">
-          {WHY_HAIRSUP_MEN.map(({ icon, title, desc }) => (
+          {WHY_Allendesi_MEN.map(({ icon, title, desc }) => (
             <div key={title} className="flex items-start gap-3">
               <span className="text-2xl">{icon}</span>
               <div>

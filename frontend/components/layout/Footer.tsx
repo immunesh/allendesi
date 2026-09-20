@@ -20,10 +20,9 @@ const FOOTER_LINKS = {
     { label: 'Returns & Exchanges', href: '/faq#returns' },
     { label: 'Shipping Policy', href: '/faq#shipping' },
     { label: 'Wig Care Guide', href: '/blog/how-to-maintain-human-hair-wig' },
-    { label: 'Virtual Try-On', href: '/try-on' },
   ],
   'Company': [
-    { label: 'About HairsUp', href: '/about' },
+    { label: 'About Allendesi', href: '/about' },
     { label: 'Our Stores', href: '/stores' },
     { label: 'Blog & Tips', href: '/blog' },
     { label: 'Careers', href: '/about#careers' },
@@ -74,22 +73,22 @@ export default function Footer() {
               <div className="w-9 h-9 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
-              <span className="text-2xl font-display font-bold text-white">HairsUp</span>
+              <span className="text-2xl font-display font-bold text-white">Allendesi</span>
             </Link>
             <p className="text-sm text-gray-400 leading-relaxed mb-6 max-w-xs">
               India&apos;s most trusted hair wig brand. We craft premium wigs and hair systems
               that restore confidence and transform lives — for men and women alike.
             </p>
             <div className="space-y-2 text-sm">
-              <a href="tel:+911800hairsup" className="flex items-center gap-2 hover:text-brand-400 transition-colors">
-                <Phone className="w-4 h-4 text-brand-500" /> +91 1800-HAIRSUP (Free)
+              <a href="tel:+911800Allendesi" className="flex items-center gap-2 hover:text-brand-400 transition-colors">
+                <Phone className="w-4 h-4 text-brand-500" /> +91 1800-Allendesi (Free)
               </a>
-              <a href="mailto:hello@hairsup.com" className="flex items-center gap-2 hover:text-brand-400 transition-colors">
-                <Mail className="w-4 h-4 text-brand-500" /> hello@hairsup.com
+              <a href="mailto:hello@Allendesi.com" className="flex items-center gap-2 hover:text-brand-400 transition-colors">
+                <Mail className="w-4 h-4 text-brand-500" /> hello@Allendesi.com
               </a>
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-brand-500 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-400">HairsUp HQ, Bandra Kurla Complex, Mumbai 400051</span>
+                <span className="text-gray-400">Allendesi HQ, Bandra Kurla Complex, Mumbai 400051</span>
               </div>
             </div>
 
@@ -151,7 +150,7 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-gray-800">
         <div className="container-custom py-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
-          <p>© {new Date().getFullYear()} HairsUp Technologies Pvt. Ltd. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Allendesi Technologies Pvt. Ltd. All rights reserved.</p>
           <div className="flex items-center gap-2">
             {['Visa', 'Mastercard', 'UPI', 'Razorpay', 'EMI'].map((pay) => (
               <span key={pay} className="bg-gray-800 px-2 py-1 rounded text-gray-400">{pay}</span>

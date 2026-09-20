@@ -133,7 +133,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-sm">Phone / WhatsApp</p>
-                    <a href="tel:+911800hairsup" className="text-sm text-brand-600 hover:underline block">+91 1800-HAIRSUP (Free)</a>
+                    <a href="tel:+911800Allendesi" className="text-sm text-brand-600 hover:underline block">+91 1800-Allendesi (Free)</a>
                     <a href="https://wa.me/918976543210" className="text-sm text-green-600 hover:underline">WhatsApp Chat</a>
                   </div>
                 </div>
@@ -143,8 +143,8 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-sm">Email</p>
-                    <a href="mailto:hello@hairsup.com" className="text-sm text-brand-600 hover:underline block">hello@hairsup.com</a>
-                    <a href="mailto:help@hairsup.com" className="text-sm text-brand-600 hover:underline">help@hairsup.com (Support)</a>
+                    <a href="mailto:hello@Allendesi.com" className="text-sm text-brand-600 hover:underline block">hello@Allendesi.com</a>
+                    <a href="mailto:help@Allendesi.com" className="text-sm text-brand-600 hover:underline">help@Allendesi.com (Support)</a>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -153,7 +153,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-sm">Head Office</p>
-                    <p className="text-sm text-gray-600">HairsUp Technologies Pvt. Ltd.</p>
+                    <p className="text-sm text-gray-600">Allendesi Technologies Pvt. Ltd.</p>
                     <p className="text-sm text-gray-600">Bandra Kurla Complex</p>
                     <p className="text-sm text-gray-600">Mumbai, Maharashtra 400051</p>
                   </div>

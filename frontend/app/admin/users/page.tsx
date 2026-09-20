@@ -255,7 +255,7 @@ return (
                   {/* Role */}
                   <td className="p-3 sm:p-5">
                     <select
-                      value={user.role}
+                      value={String(user.role || 'CUSTOMER').toUpperCase()}
                       onChange={(e) =>
                         handleRoleChange(
                           user.id,
@@ -285,6 +285,10 @@ return (
                     >
                       <option value="CUSTOMER">
                         CUSTOMER
+                      </option>
+
+                      <option value="SELLER">
+                        SELLER
                       </option>
 
                       <option value="ADMIN">

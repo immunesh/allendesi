@@ -99,7 +99,7 @@ model Product {
   salePrice     Float?
   stock         Int              @default(0)
   sku           String           @unique
-  brand         String           @default("HairsUp")
+  brand         String           @default("Allendesi")
   material      String?
   capSize       String?
   length        String?

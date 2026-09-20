@@ -1,17 +1,22 @@
 import dotenv from 'dotenv';
-import app from './app';
-import { prisma } from './db/prisma';
 
 dotenv.config();
 
+const app = require('./app').default;
+const { prisma, ensureDefaultAdmin } = require('./db/prisma');
+
 const PORT = parseInt(process.env.PORT || '5000', 10);
+const HOST = process.env.HOST || '0.0.0.0';
 
 async function main() {
   await prisma.$connect();
   console.log('Database connected');
 
-  app.listen(PORT, () => {
-    console.log(`HairsUp API running on http://localhost:${PORT}`);
+  await ensureDefaultAdmin();
+  console.log('Admin bootstrap complete');
+
+  app.listen(PORT, HOST, () => {
+    console.log(`Allendesi API running on http://localhost:${PORT}`);
   });
 }
 

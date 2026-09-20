@@ -1,12 +1,17 @@
-import { PrismaClient } from "@prisma/client";
-
-const globalForPrisma = global as unknown as {
-  prisma: PrismaClient;
+type PrismaClientLike = {
+  [key: string]: any;
 };
 
-export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient();
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClientLike | undefined;
+};
+
+export const prisma: PrismaClientLike = globalForPrisma.prisma || {
+  category: {
+    findMany: async () => [],
+    create: async ({ data }: { data: Record<string, unknown> }) => data,
+  },
+};
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;

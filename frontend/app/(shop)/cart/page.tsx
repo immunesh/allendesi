@@ -264,7 +264,7 @@ export default function CartPage() {
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-3">
-                    {['FIRST20', 'HAIRSUP200'].map((code) => (
+                    {['FIRST20', 'Allendesi200'].map((code) => (
                       <button
                         key={code}
                         onClick={() => setCouponInput(code)}

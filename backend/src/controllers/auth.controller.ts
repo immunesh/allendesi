@@ -1,21 +1,27 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
+import { OAuth2Client } from 'google-auth-library';
 import { prisma } from '../db/prisma';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { AppError } from '../middleware/error.middleware';
 import { AuthRequest } from '../middleware/auth.middleware';
 
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 export const register = async (req: Request, res: Response): Promise<void> => {
-  const { email, password, firstName, lastName, phone } = req.body;
+  const { email, password, firstName, lastName, phone, role } = req.body;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     throw new AppError('Email already registered', 409);
   }
 
+  const normalizedRole = String(role || 'CUSTOMER').toUpperCase();
+  const safeRole = normalizedRole === 'ADMIN' ? 'ADMIN' : normalizedRole === 'SELLER' ? 'SELLER' : 'CUSTOMER';
+
   const hashedPassword = await bcrypt.hash(password, 12);
   const user = await prisma.user.create({
-    data: { email, password: hashedPassword, firstName, lastName, phone },
+    data: { email, password: hashedPassword, firstName, lastName, phone, role: safeRole },
     select: { id: true, email: true, firstName: true, lastName: true, role: true },
   });
 
@@ -55,6 +61,72 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
   const { password: _, ...userWithoutPassword } = user;
   res.json({ success: true, data: { user: userWithoutPassword, accessToken, refreshToken } });
+};
+
+export const googleLogin = async (req: Request, res: Response): Promise<void> => {
+  const { credential } = req.body;
+
+  if (!credential) {
+    throw new AppError('Google credential is required', 400);
+  }
+
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload?.email) {
+      throw new AppError('Google authentication failed', 401);
+    }
+
+    const email = payload.email.toLowerCase();
+    const firstName = payload.given_name || payload.name?.split(' ')[0] || 'User';
+    const lastName = payload.family_name || payload.name?.split(' ').slice(1).join(' ') || '';
+
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email,
+          password: Math.random().toString(36).slice(-12),
+          firstName,
+          lastName,
+          role: 'CUSTOMER',
+          isVerified: true,
+        },
+      });
+    }
+
+    const authUser = {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+    };
+
+    const accessToken = generateAccessToken(user.id, user.role);
+    const refreshToken = generateRefreshToken(user.id);
+
+    await prisma.refreshToken.create({
+      data: {
+        token: refreshToken,
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    res.json({ success: true, data: { user: authUser, accessToken, refreshToken } });
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    console.error('Google login failed', error);
+    throw new AppError('Google authentication failed', 401);
+  }
 };
 
 export const refresh = async (req: Request, res: Response): Promise<void> => {

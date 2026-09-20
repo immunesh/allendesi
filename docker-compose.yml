@@ -3,17 +3,17 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: hairsup_db
+    container_name: Allendesi_db
     environment:
-      POSTGRES_USER: hairsup_user
-      POSTGRES_PASSWORD: hairsup_pass
-      POSTGRES_DB: hairsup_db
+      POSTGRES_USER: Allendesi_user
+      POSTGRES_PASSWORD: Allendesi_pass
+      POSTGRES_DB: Allendesi_db
     ports:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U hairsup_user -d hairsup_db']
+      test: ['CMD-SHELL', 'pg_isready -U Allendesi_user -d Allendesi_db']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -22,9 +22,9 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: hairsup_backend
+    container_name: Allendesi_backend
     environment:
-      DATABASE_URL: postgresql://hairsup_user:hairsup_pass@postgres:5432/hairsup_db
+      DATABASE_URL: postgresql://Allendesi_user:Allendesi_pass@postgres:5432/Allendesi_db
       JWT_SECRET: your_super_secret_jwt_key_change_in_production
       PORT: 5000
       NODE_ENV: development
@@ -41,7 +41,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: hairsup_frontend
+    container_name: Allendesi_frontend
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:5000/api
     ports:

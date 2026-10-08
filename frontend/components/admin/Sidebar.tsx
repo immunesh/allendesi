@@ -16,6 +16,7 @@ const menuItems = [
 { name: "Dashboard", href: "/admin" },
 { name: "Products", href: "/admin/products" },
 { name: "Categories", href: "/admin/categories" },
+{ name: "Hero Section", href: "/admin/hero-section" },
 { name: "Hero Slides", href: "/admin/hero-slides" },
 { name: "Orders", href: "/admin/orders" },
 { name: "Users", href: "/admin/users" },

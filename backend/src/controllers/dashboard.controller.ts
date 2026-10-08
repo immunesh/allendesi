@@ -56,8 +56,7 @@ export const getDashboardStats = async (
       categorySales: Array.isArray(categorySales) ? categorySales : [],
       recentTransactions: Array.isArray(recentOrders)
         ? recentOrders.map((order) => ({
-            id: order.id,
-            orderNumber: order.orderNumber,
+            id: order.orderNumber,
             amount: Number(order.total ?? 0),
             status: order.status,
             customer: `${order.user?.firstName ?? 'Customer'} ${order.user?.lastName ?? ''}`.trim(),

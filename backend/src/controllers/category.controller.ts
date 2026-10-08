@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../db/prisma";
+import { ALLENDESI_CATEGORIES } from "../constants/categories";
 
 export const getCategories = async (
   req: Request,
@@ -7,8 +8,8 @@ export const getCategories = async (
 ) => {
   try {
     const categories = await prisma.category.findMany({
-      orderBy: {
-        createdAt: "desc",
+      where: {
+        slug: { in: ALLENDESI_CATEGORIES.map(({ slug }) => slug) },
       },
       include: {
         _count: {
@@ -19,7 +20,12 @@ export const getCategories = async (
       },
     });
 
-    res.json(categories);
+    const orderedCategories = ALLENDESI_CATEGORIES.flatMap((allowed) => {
+      const category = categories.find((item) => item.slug === allowed.slug);
+      return category ? [category] : [];
+    });
+
+    res.json(orderedCategories);
   } catch (error) {
     console.error(error);
 
@@ -65,6 +71,12 @@ export const createCategory = async (
   try {
     const { name, slug, description, gender, image } = req.body;
 
+    if (!ALLENDESI_CATEGORIES.some((category) => category.name === name && category.slug === slug)) {
+      return res.status(400).json({
+        message: "Category must be one of the allowed Allendesi categories.",
+      });
+    }
+
     const category = await prisma.category.create({
       data: {
         name,
@@ -92,6 +104,12 @@ export const updateCategory = async (
   try {
     const { id } = req.params;
     const { name, slug, description, gender, image } = req.body;
+
+    if (!ALLENDESI_CATEGORIES.some((category) => category.name === name && category.slug === slug)) {
+      return res.status(400).json({
+        message: "Category must be one of the allowed Allendesi categories.",
+      });
+    }
 
     const category = await prisma.category.update({
       where: {

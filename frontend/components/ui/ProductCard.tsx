@@ -149,7 +149,7 @@ console.log("CARD", {
           {/* Action buttons on hover */}
           <div className={cn(
             'absolute inset-x-2 bottom-2 flex gap-2 transition-all duration-300',
-            isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            isHovered ? 'opacity-100 translate-y-0' : 'translate-y-0 opacity-100 md:translate-y-4 md:opacity-0'
           )}>
             <button
               onClick={handleAddToCart}
@@ -193,7 +193,7 @@ console.log("CARD", {
         {/* Product info */}
         <div className="p-3">
           <p className="text-xs text-gray-400 mb-0.5 font-medium uppercase tracking-wide">
-            {product.category?.name}
+            {product.brand || product.category?.name}
           </p>
           <h3 className="font-semibold text-gray-900 text-sm leading-tight mb-1 line-clamp-2 group-hover:text-brand-600 transition-colors">
             {product.name}

@@ -57,7 +57,7 @@ export default function AboutPage() {
   return (
     <div>
       {/* Hero */}
-      <section className="relative py-24 overflow-hidden">
+      <section id="story" className="relative py-24 overflow-hidden">
         <div className="absolute inset-0">
           <Image
             src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1400&q=80"
@@ -83,7 +83,7 @@ export default function AboutPage() {
       </section>
 
       {/* Mission & Vision */}
-      <section className="py-16 container-custom">
+      <section id="why-allendesi" className="py-16 container-custom">
         <div className="grid md:grid-cols-2 gap-8">
           <div className="bg-gradient-to-br from-brand-50 to-purple-50 rounded-3xl p-8 border border-brand-100">
             <div className="w-12 h-12 bg-brand-100 rounded-2xl flex items-center justify-center mb-4">

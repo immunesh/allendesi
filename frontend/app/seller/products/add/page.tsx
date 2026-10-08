@@ -29,10 +29,6 @@ export default function AddProductPage() {
         const list = Array.isArray(data) ? data : data?.data || [];
 
         setCategories(list);
-
-        if (list[0]?.id) {
-          setSelectedCategoryId(list[0].id);
-        }
       } catch (error) {
         console.error('Failed to load categories:', error);
       }
@@ -65,6 +61,11 @@ export default function AddProductPage() {
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
+
+    if (!categories.some((category) => category.id === selectedCategoryId)) {
+      alert('Please select a category.');
+      return;
+    }
 
     try {
       setSaving(true);
@@ -105,7 +106,7 @@ export default function AddProductPage() {
         slug,
         description: form.description || '',
         shortDesc: form.description || '',
-        categoryId: selectedCategoryId || categories[0]?.id || '',
+        categoryId: selectedCategoryId,
         gender: 'UNISEX',
         basePrice: Number(form.basePrice),
         stock: Number(form.stock),
@@ -199,6 +200,29 @@ export default function AddProductPage() {
             placeholder="Enter product name"
             required
           />
+        </div>
+
+        <div>
+          <label htmlFor="product-category" className="mb-2 block text-sm text-gray-300">
+            Category <span className="text-red-400">*</span>
+          </label>
+          <select
+            id="product-category"
+            value={selectedCategoryId}
+            onChange={(e) => setSelectedCategoryId(e.target.value)}
+            onInvalid={(e) => {
+              e.preventDefault();
+              alert('Please select a category.');
+            }}
+            className="input-field"
+            required
+            aria-required="true"
+          >
+            <option value="">Select a category</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>{category.name}</option>
+            ))}
+          </select>
         </div>
 
         {/* Price + Stock */}

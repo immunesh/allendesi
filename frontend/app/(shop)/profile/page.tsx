@@ -62,6 +62,9 @@ const [addressForm, setAddressForm] =
   });
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('tab') === 'addresses') {
+      setActiveTab('addresses');
+    }
     if (!isAuthenticated) { router.push('/login'); return; }
 if (user)
   setForm({

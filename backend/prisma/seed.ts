@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { ALLENDESI_CATEGORIES } from '../src/constants/categories';
 
 const prisma = new PrismaClient();
 
@@ -54,6 +55,14 @@ async function main() {
     update: {},
     create: { name: 'Synthetic', slug: 'synthetic', parentId: menCat.id },
   });
+
+  for (const category of ALLENDESI_CATEGORIES) {
+    await prisma.category.upsert({
+      where: { slug: category.slug },
+      update: { name: category.name },
+      create: category,
+    });
+  }
 
   const products = [
     {

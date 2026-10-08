@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Sparkles, Mail, Lock, Loader2 } from 'lucide-react';
@@ -18,6 +18,12 @@ export default function LoginPage() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('role')?.toUpperCase() === 'SELLER') {
+      setRole('SELLER');
+    }
+  }, []);
 
   const validate = () => {
     const e: Record<string, string> = {};

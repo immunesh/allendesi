@@ -1,17 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Phone, Mail, MapPin, Clock, MessageCircle, Send, Loader2, CheckCircle } from 'lucide-react';
 
 const CONTACT_TOPICS = [
   'Order Enquiry', 'Returns & Refunds', 'Product Information', 'Virtual Try-On Help',
-  'Store Consultation Booking', 'Wholesale / B2B', 'Media & PR', 'Other',
+  'Store Consultation Booking', 'Wholesale / B2B', 'Media & PR', 'Affiliate Program', 'Careers', 'Other',
 ];
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', topic: '', message: '' });
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+
+  useEffect(() => {
+    const topic = new URLSearchParams(window.location.search).get('topic');
+    if (topic && CONTACT_TOPICS.includes(topic)) {
+      setForm((current) => ({ ...current, topic }));
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

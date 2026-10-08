@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Loader2, CheckCircle2, XCircle, Truck, Pencil } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useUIStore } from '@/lib/store';
-import ShipmentModal from '@/components/admin/ShipmentModal';
 
 type Order = {
   id: string;
@@ -14,11 +13,6 @@ type Order = {
   paymentStatus: string;
   total: number;
   createdAt: string;
-  courier?: string | null;
-  awbNumber?: string | null;
-  trackingUrl?: string | null;
-  estimatedDelivery?: string | null;
-  shipmentNotes?: string | null;
   user: {
     firstName: string;
     lastName: string;
@@ -30,18 +24,6 @@ export default function SellerOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
-  const [selectedShipment, setSelectedShipment] = useState<{
-    orderId: string;
-    mode: 'create' | 'edit';
-    existing?: {
-      courier?: string | null;
-      awbNumber?: string | null;
-      trackingUrl?: string | null;
-      estimatedDelivery?: string | null;
-      shipmentNotes?: string | null;
-    };
-  } | null>(null);
-
   const { showToast } = useUIStore();
 
   const fetchOrders = async () => {
@@ -88,7 +70,7 @@ export default function SellerOrdersPage() {
         <div>
           <h1 className="text-2xl font-semibold text-white">Orders</h1>
           <p className="mt-1 text-sm text-gray-400">
-            Review incoming orders, process shipments, and manage deliveries.
+            Review incoming orders and accept or reject them from here.
           </p>
         </div>
 
@@ -110,7 +92,7 @@ export default function SellerOrdersPage() {
                 <th className="px-4 py-4">Status</th>
                 <th className="px-4 py-4">Payment</th>
                 <th className="px-4 py-4">Total</th>
-                <th className="px-4 py-4">Decision / Shipping</th>
+                <th className="px-4 py-4">Decision</th>
                 <th className="px-4 py-4">Date</th>
               </tr>
             </thead>
@@ -149,28 +131,21 @@ export default function SellerOrdersPage() {
                     </td>
 
                     <td className="px-4 py-4">
-                      <div>
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                            order.status === 'DELIVERED'
-                              ? 'bg-green-500/15 text-green-400'
-                              : order.status === 'SHIPPED'
-                              ? 'bg-blue-500/15 text-blue-400'
-                              : order.status === 'PENDING'
-                              ? 'bg-yellow-500/15 text-yellow-400'
-                              : order.status === 'CONFIRMED'
-                              ? 'bg-cyan-500/15 text-cyan-400'
-                              : 'bg-red-500/15 text-red-400'
-                          }`}
-                        >
-                          {order.status}
-                        </span>
-                        {order.estimatedDelivery && (
-                          <div className="mt-1 text-[11px] text-cyan-400 font-medium">
-                            Est: {new Date(order.estimatedDelivery).toLocaleDateString()}
-                          </div>
-                        )}
-                      </div>
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                          order.status === 'DELIVERED'
+                            ? 'bg-green-500/15 text-green-400'
+                            : order.status === 'SHIPPED'
+                            ? 'bg-blue-500/15 text-blue-400'
+                            : order.status === 'PENDING'
+                            ? 'bg-yellow-500/15 text-yellow-400'
+                            : order.status === 'CONFIRMED'
+                            ? 'bg-cyan-500/15 text-cyan-400'
+                            : 'bg-red-500/15 text-red-400'
+                        }`}
+                      >
+                        {order.status}
+                      </span>
                     </td>
 
                     <td className="px-4 py-4">
@@ -207,54 +182,18 @@ export default function SellerOrdersPage() {
                             Reject
                           </button>
                         </div>
-                      ) : ['CONFIRMED', 'PROCESSING'].includes(order.status) ? (
+                      ) : ['CONFIRMED', 'PROCESSING', 'SHIPPED', 'OUT_FOR_DELIVERY'].includes(order.status) ? (
                         <div className="flex flex-wrap gap-2">
-                          <button
-                            onClick={() => setSelectedShipment({ orderId: order.id, mode: 'create' })}
-                            disabled={actionLoadingId === order.id}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-cyan-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-cyan-500 disabled:opacity-60"
-                          >
-                            <Truck className="h-3.5 w-3.5" />
-                            Ready to Ship
-                          </button>
-                          <button
-                            onClick={() => handleDecision(order.id, 'CANCELLED')}
-                            disabled={actionLoadingId === order.id}
-                            className="inline-flex items-center gap-1 rounded-full bg-rose-600/90 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-rose-600 disabled:opacity-60"
-                          >
-                            {actionLoadingId === order.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />}
-                            Cancel
-                          </button>
-                        </div>
-                      ) : ['SHIPPED', 'OUT_FOR_DELIVERY'].includes(order.status) ? (
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            onClick={() => handleDecision(order.id, 'DELIVERED')}
-                            disabled={actionLoadingId === order.id}
-                            className="inline-flex items-center gap-1 rounded-full bg-emerald-600/90 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-emerald-600 disabled:opacity-60"
-                          >
-                            {actionLoadingId === order.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-                            Deliver
-                          </button>
-                          <button
-                            onClick={() =>
-                              setSelectedShipment({
-                                orderId: order.id,
-                                mode: 'edit',
-                                existing: {
-                                  courier: order.courier,
-                                  awbNumber: order.awbNumber,
-                                  trackingUrl: order.trackingUrl,
-                                  estimatedDelivery: order.estimatedDelivery,
-                                  shipmentNotes: order.shipmentNotes,
-                                },
-                              })
-                            }
-                            className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/20"
-                          >
-                            <Pencil className="h-3.5 w-3.5 text-cyan-400" />
-                            Edit Shipping
-                          </button>
+                          {order.status !== 'OUT_FOR_DELIVERY' && (
+                            <button
+                              onClick={() => handleDecision(order.id, 'DELIVERED')}
+                              disabled={actionLoadingId === order.id}
+                              className="inline-flex items-center gap-1 rounded-full bg-emerald-600/90 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-emerald-600 disabled:opacity-60"
+                            >
+                              {actionLoadingId === order.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                              Deliver
+                            </button>
+                          )}
                           <button
                             onClick={() => handleDecision(order.id, 'CANCELLED')}
                             disabled={actionLoadingId === order.id}
@@ -265,7 +204,7 @@ export default function SellerOrdersPage() {
                           </button>
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-500">Completed</span>
+                        <span className="text-xs text-gray-500">No action needed</span>
                       )}
                     </td>
 
@@ -277,19 +216,6 @@ export default function SellerOrdersPage() {
           </table>
         </div>
       </div>
-
-      {selectedShipment && (
-        <ShipmentModal
-          orderId={selectedShipment.orderId}
-          mode={selectedShipment.mode}
-          existing={selectedShipment.existing}
-          onClose={() => setSelectedShipment(null)}
-          onSuccess={() => {
-            setSelectedShipment(null);
-            void fetchOrders();
-          }}
-        />
-      )}
     </div>
   );
 }

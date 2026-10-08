@@ -3,35 +3,6 @@
 import Link from 'next/link';
 import { Sparkles, Instagram, Facebook, Youtube, Twitter, Mail, Phone, MapPin } from 'lucide-react';
 
-const FOOTER_LINKS = {
-  'Hair Collections': [
-    { label: "Women's Wigs", href: '/women' },
-    { label: "Men's Hair Systems", href: '/men' },
-    { label: 'Human Hair Wigs', href: '/women?material=human-hair' },
-    { label: 'Synthetic Wigs', href: '/women?material=synthetic' },
-    { label: 'Lace Front Wigs', href: '/women?texture=lace-front' },
-    { label: 'Best Sellers', href: '/women?bestSeller=true' },
-    { label: 'New Arrivals', href: '/women?newArrival=true' },
-  ],
-  'Customer Care': [
-    { label: 'FAQ', href: '/faq' },
-    { label: 'Contact Us', href: '/contact' },
-    { label: 'Track Your Order', href: '/orders' },
-    { label: 'Returns & Exchanges', href: '/faq#returns' },
-    { label: 'Shipping Policy', href: '/faq#shipping' },
-    { label: 'Wig Care Guide', href: '/blog/how-to-maintain-human-hair-wig' },
-  ],
-  'Company': [
-    { label: 'About Allendesi', href: '/about' },
-    { label: 'Our Stores', href: '/stores' },
-    { label: 'Blog & Tips', href: '/blog' },
-    { label: 'Careers', href: '/about#careers' },
-    { label: 'Privacy Policy', href: '/privacy' },
-    { label: 'Terms & Conditions', href: '/terms' },
-    { label: 'Affiliate Program', href: '/affiliate' },
-  ],
-};
-
 const SOCIAL_LINKS = [
   { Icon: Instagram, href: '#', label: 'Instagram' },
   { Icon: Facebook, href: '#', label: 'Facebook' },
@@ -66,19 +37,25 @@ export default function Footer() {
 
       {/* Main footer */}
       <div className="container-custom py-14">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
-          {/* Brand */}
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-[minmax(0,1fr)_minmax(260px,0.55fr)] md:gap-14">
+          <div>
             <Link href="/" className="flex items-center gap-2 mb-4">
               <div className="w-9 h-9 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
               <span className="text-2xl font-display font-bold text-white">Allendesi</span>
             </Link>
-            <p className="text-sm text-gray-400 leading-relaxed mb-6 max-w-xs">
-              India&apos;s most trusted hair wig brand. We craft premium wigs and hair systems
-              that restore confidence and transform lives — for men and women alike.
-            </p>
+            <section className="mt-6 max-w-3xl border-l-2 border-red-700 pl-5 sm:pl-6">
+              <p className="text-xs font-semibold uppercase tracking-wider text-red-400">Our Journey</p>
+              <h2 className="mt-2 text-xl font-semibold text-white sm:text-2xl">A marketplace for shoppers across India</h2>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gray-400 sm:text-base">
+                Allendesi is a trusted online shopping platform serving customers across India. We bring shoppers and sellers together with a broad selection of products, convenient online shopping, and dependable customer support.
+              </p>
+            </section>
+          </div>
+
+          <div className="border-t border-gray-800 pt-7 md:border-l md:border-t-0 md:pl-8 md:pt-1">
+            <h3 className="mb-4 text-sm font-semibold text-white">Contact Allendesi</h3>
             <div className="space-y-2 text-sm">
               <a href="tel:+911800Allendesi" className="flex items-center gap-2 hover:text-brand-400 transition-colors">
                 <Phone className="w-4 h-4 text-brand-500" /> +91 1800-Allendesi (Free)
@@ -92,7 +69,6 @@ export default function Footer() {
               </div>
             </div>
 
-            {/* Social */}
             <div className="flex items-center gap-3 mt-6">
               {SOCIAL_LINKS.map(({ Icon, href, label }) => (
                 <a
@@ -107,21 +83,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Links */}
-          {Object.entries(FOOTER_LINKS).map(([title, links]) => (
-            <div key={title}>
-              <h3 className="font-semibold text-white mb-4">{title}</h3>
-              <ul className="space-y-2">
-                {links.map(({ label, href }) => (
-                  <li key={label}>
-                    <Link href={href} className="text-sm text-gray-400 hover:text-brand-400 transition-colors">
-                      {label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
         </div>
       </div>
 

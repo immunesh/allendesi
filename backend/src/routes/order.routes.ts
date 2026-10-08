@@ -38,23 +38,20 @@ router.put(
 
 router.post(
   "/admin/:id/shipment",
-  authorize("ADMIN", "SELLER"),
+  authorize("ADMIN"),
   createShipment
 );
 
 router.put(
   "/admin/:id/shipment",
-  authorize("ADMIN", "SELLER"),
+  authorize("ADMIN"),
   updateShipment
 );
-
-/* SELLER & CUSTOMER */
+/* CUSTOMER */
 router.post('/', createOrder);
 router.get('/', getOrders);
-router.get('/seller', authorize('SELLER', 'ADMIN'), getSellerOrders);
-router.patch('/:id/seller/status', authorize('SELLER', 'ADMIN'), updateSellerOrderDecision);
-router.post('/seller/:id/shipment', authorize('SELLER', 'ADMIN'), createShipment);
-router.put('/seller/:id/shipment', authorize('SELLER', 'ADMIN'), updateShipment);
+router.get('/seller', authorize('SELLER'), getSellerOrders);
+router.patch('/:id/seller/status', authorize('SELLER'), updateSellerOrderDecision);
 router.get('/:id', getOrderById);
 router.patch('/:id/cancel', cancelOrder);
 

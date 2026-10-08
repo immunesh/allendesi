@@ -7,6 +7,7 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 
 type Product = {
   id: string;
+  categoryId?: string;
   name: string;
   slug: string;
   basePrice: number;
@@ -22,6 +23,7 @@ type Product = {
 
 type ProductDraft = {
   name: string;
+  categoryId: string;
   basePrice: string;
   stock: string;
   description: string;
@@ -29,10 +31,12 @@ type ProductDraft = {
 
 export default function SellerProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<ProductDraft>({
     name: '',
+    categoryId: '',
     basePrice: '',
     stock: '',
     description: '',
@@ -68,13 +72,30 @@ export default function SellerProductsPage() {
   };
 
   useEffect(() => {
-    fetchProducts();
+    void (async () => {
+      await fetchCategories();
+      await fetchProducts();
+    })();
   }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/categories');
+      const data = await res.json();
+      setCategories(Array.isArray(data) ? data : data?.data || []);
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+      setCategories([]);
+    }
+  };
 
   const startEdit = (product: Product) => {
     setEditingId(product.id);
     setDraft({
       name: product.name,
+      categoryId: categories.some((category) => category.id === product.categoryId)
+        ? product.categoryId || ''
+        : '',
       basePrice: String(product.basePrice),
       stock: String(product.stock),
       description: product.name,
@@ -83,21 +104,17 @@ export default function SellerProductsPage() {
 
   const cancelEdit = () => {
     setEditingId(null);
-    setDraft({ name: '', basePrice: '', stock: '', description: '' });
+    setDraft({ name: '', categoryId: '', basePrice: '', stock: '', description: '' });
   };
 
   const saveEdit = async (productId: string) => {
+    if (!categories.some((category) => category.id === draft.categoryId)) {
+      alert('Please select a category.');
+      return;
+    }
+
     try {
       setSavingId(productId);
-
-      const categoriesRes = await fetch('http://localhost:5000/api/categories');
-      const categoriesData = await categoriesRes.json();
-      const categoriesList = Array.isArray(categoriesData) ? categoriesData : categoriesData?.data || [];
-      const fallbackCategoryId = categoriesList[0]?.id || '';
-
-      if (!fallbackCategoryId) {
-        throw new Error('No categories are available to assign to this product');
-      }
 
       const res = await fetch(`http://localhost:5000/api/products/${productId}`, {
         method: 'PUT',
@@ -109,7 +126,7 @@ export default function SellerProductsPage() {
           slug: draft.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
           description: draft.description || draft.name,
           shortDesc: draft.description || draft.name,
-          categoryId: fallbackCategoryId,
+          categoryId: draft.categoryId,
           gender: 'UNISEX',
           basePrice: Number(draft.basePrice),
           stock: Number(draft.stock),
@@ -237,6 +254,27 @@ export default function SellerProductsPage() {
 
             {editingId === product.id ? (
               <div className="mt-2 space-y-2">
+                <label className="block text-sm text-gray-300">
+                  Category <span className="text-red-400">*</span>
+                  <select
+                    value={draft.categoryId}
+                    onChange={(e) => setDraft({ ...draft, categoryId: e.target.value })}
+                    className="input-field mt-1"
+                    required
+                  >
+                    <option value="">Select a category</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>{category.name}</option>
+                    ))}
+                  </select>
+                </label>
+                {!draft.categoryId && (
+                  <p className="text-xs text-amber-400">
+                    {product.category?.name
+                      ? `Current category “${product.category.name}” is no longer allowed. Select a valid category to save.`
+                      : 'Please select a valid category to save.'}
+                  </p>
+                )}
                 <input
                   value={draft.name}
                   onChange={(e) => setDraft({ ...draft, name: e.target.value })}

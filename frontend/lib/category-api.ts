@@ -2,7 +2,7 @@ import { api } from "./api";
 
 export async function getCategories() {
   const res = await api.get("/categories");
-  return res.data;
+  return Array.isArray(res.data) ? res.data : res.data?.data || [];
 }
 
 export async function deleteCategory(id: string) {

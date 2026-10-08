@@ -262,9 +262,9 @@ export const updateSellerOrderDecision = async (
     const { id } = req.params;
     const { status } = req.body;
 
-    const allowedStatuses = ['CONFIRMED', 'CANCELLED', 'DELIVERED', 'SHIPPED'];
+    const allowedStatuses = ['CONFIRMED', 'CANCELLED', 'DELIVERED'];
     if (!allowedStatuses.includes(status)) {
-      throw new AppError('Seller update must be CONFIRMED, CANCELLED, DELIVERED or SHIPPED', 400);
+      throw new AppError('Seller update must be CONFIRMED, CANCELLED or DELIVERED', 400);
     }
 
     const existing = await prisma.order.findUnique({ where: { id } });
@@ -273,8 +273,8 @@ export const updateSellerOrderDecision = async (
 
     const validTransitions: Record<string, string[]> = {
       PENDING: ['CONFIRMED', 'CANCELLED'],
-      CONFIRMED: ['DELIVERED', 'CANCELLED', 'SHIPPED', 'PROCESSING'],
-      PROCESSING: ['DELIVERED', 'CANCELLED', 'SHIPPED'],
+      CONFIRMED: ['DELIVERED', 'CANCELLED'],
+      PROCESSING: ['DELIVERED', 'CANCELLED'],
       SHIPPED: ['DELIVERED', 'CANCELLED'],
       OUT_FOR_DELIVERY: ['DELIVERED', 'CANCELLED'],
     };
@@ -380,8 +380,8 @@ export const createShipment = async (
     const existing = await prisma.order.findUnique({ where: { id } });
     if (!existing) throw new AppError('Order not found', 404);
 
-    if (!['CONFIRMED', 'PROCESSING'].includes(existing.status)) {
-      throw new AppError('Order must be in Confirmed or Processing status before it can be shipped', 400);
+    if (existing.status !== 'PROCESSING') {
+      throw new AppError('Order must be in Processing status before it can be shipped', 400);
     }
 
     const { courier, awbNumber, trackingUrl, estimatedDelivery } = validateShipmentPayload(req.body);

@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
 import { prisma } from "../db/prisma";
 import { AppError } from "../middleware/error.middleware";
+import { ALLENDESI_CATEGORIES, isAllendesiCategory } from "../constants/categories";
+
+const INVALID_CATEGORY_MESSAGE =
+  "Invalid category. Please select a valid Allendesi category.";
 
 export const getProducts = async (
   req: Request,
@@ -175,20 +179,18 @@ export const getCategories = async (
   const categories = await prisma.category.findMany({
     where: {
       parentId: null,
+      slug: { in: ALLENDESI_CATEGORIES.map(({ slug }) => slug) },
     },
-    include: {
-      children: true,
-      _count: {
-        select: {
-          products: true,
-        },
-      },
-    },
+  });
+
+  const orderedCategories = ALLENDESI_CATEGORIES.flatMap((allowed) => {
+    const category = categories.find((item) => item.slug === allowed.slug);
+    return category ? [category] : [];
   });
 
   res.json({
     success: true,
-    data: categories,
+    data: orderedCategories,
   });
 };
 
@@ -355,40 +357,14 @@ export const createProduct = async (
         })
       : [];
 
-    let resolvedCategoryId = String(categoryId || '').trim();
+    const selectedCategoryId = String(categoryId || '').trim();
+    const selectedCategory = selectedCategoryId
+      ? await prisma.category.findUnique({ where: { id: selectedCategoryId } })
+      : null;
 
-    if (!resolvedCategoryId) {
-      const fallbackCategory = await prisma.category.findFirst();
-
-      if (!fallbackCategory) {
-        res.status(400).json({
-          success: false,
-          message: 'No categories available. Create a category first.',
-        });
-        return;
-      }
-
-      resolvedCategoryId = fallbackCategory.id;
-    } else {
-      const categoryExists = await prisma.category.findUnique({
-        where: {
-          id: resolvedCategoryId,
-        },
-      });
-
-      if (!categoryExists) {
-        const fallbackCategory = await prisma.category.findFirst();
-
-        if (!fallbackCategory) {
-          res.status(400).json({
-            success: false,
-            message: 'The selected category was not found.',
-          });
-          return;
-        }
-
-        resolvedCategoryId = fallbackCategory.id;
-      }
+    if (!selectedCategory || !isAllendesiCategory(selectedCategory)) {
+      res.status(400).json({ success: false, message: INVALID_CATEGORY_MESSAGE });
+      return;
     }
 
     const product = await prisma.product.create({
@@ -410,7 +386,7 @@ export const createProduct = async (
         tags: JSON.stringify(normalizedTags),
         category: {
           connect: {
-            id: resolvedCategoryId,
+            id: selectedCategory.id,
           },
         },
         gender: gender || 'UNISEX',
@@ -496,34 +472,14 @@ export const updateProduct = async (
       includedItems,
     } = req.body;
 
-    let resolvedCategoryId = String(categoryId || '').trim();
+    const selectedCategoryId = String(categoryId || '').trim();
+    const selectedCategory = selectedCategoryId
+      ? await prisma.category.findUnique({ where: { id: selectedCategoryId } })
+      : null;
 
-    if (!resolvedCategoryId) {
-      const fallbackCategory = await prisma.category.findFirst();
-      if (!fallbackCategory) {
-        res.status(400).json({
-          success: false,
-          message: 'No categories available. Create a category first.',
-        });
-        return;
-      }
-      resolvedCategoryId = fallbackCategory.id;
-    } else {
-      const existingCategory = await prisma.category.findUnique({
-        where: { id: resolvedCategoryId },
-      });
-
-      if (!existingCategory) {
-        const fallbackCategory = await prisma.category.findFirst();
-        if (!fallbackCategory) {
-          res.status(400).json({
-            success: false,
-            message: 'The selected category was not found.',
-          });
-          return;
-        }
-        resolvedCategoryId = fallbackCategory.id;
-      }
+    if (!selectedCategory || !isAllendesiCategory(selectedCategory)) {
+      res.status(400).json({ success: false, message: INVALID_CATEGORY_MESSAGE });
+      return;
     }
 
     await prisma.productImage.deleteMany({
@@ -564,7 +520,7 @@ export const updateProduct = async (
         description,
         category: {
           connect: {
-            id: resolvedCategoryId,
+            id: selectedCategory.id,
           },
         },
         gender: gender || 'UNISEX',

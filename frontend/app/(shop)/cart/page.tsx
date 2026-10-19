@@ -47,10 +47,7 @@ export default function CartPage() {
     } catch { }
   };
   const calculatedTotal = items.reduce((sum, item) => {
-    const price =
-      Number(item.product?.salePrice) ||
-      Number(item.product?.basePrice) ||
-      0;
+    const price = Number(item.product?.salePrice ?? item.product?.basePrice ?? 0);
 
     return sum + price * item.quantity;
   }, 0);
@@ -60,20 +57,10 @@ export default function CartPage() {
     0
   );
 
-  const shipping =
-    calculatedTotal >= 999 ? 0 : 99;
-
-  const tax =
-    Math.max(calculatedTotal - discount, 0) * 0.18;
-
-  const grandTotal =
-    Math.max(
-      calculatedTotal +
-      shipping +
-      tax -
-      discount,
-      0
-    );
+  const discountedSubtotal = Math.max(calculatedTotal - discount, 0);
+  const shipping = discountedSubtotal >= 999 ? 0 : 99;
+  const tax = discountedSubtotal * 0.18;
+  const grandTotal = discountedSubtotal + shipping + tax;
 
   console.log("CALCULATED TOTAL", calculatedTotal);
   console.log("CALCULATED COUNT", calculatedItemCount);
@@ -84,10 +71,7 @@ export default function CartPage() {
         setApplyingCoupon(true);
 
         const { data } =
-          await couponApi.apply(
-            couponInput,
-            calculatedTotal
-          );
+          await couponApi.apply(couponInput);
 
         setCoupon(
           couponInput.toUpperCase(),
@@ -138,27 +122,27 @@ export default function CartPage() {
             <ShoppingBag className="w-12 h-12 text-gray-300" />
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Your bag is empty</h2>
-          <p className="text-gray-500 mb-8">Looks like you haven&apos;t added any wigs yet.</p>
+          <p className="text-gray-500 mb-8">Your bag is ready for its first find.</p>
           <div className="flex gap-3 justify-center flex-wrap">
-            <Link href="/women" className="btn-primary">Shop Women&apos;s</Link>
-            <Link href="/men" className="btn-secondary">Shop Men&apos;s</Link>
+            <Link href="/products?gender=WOMEN" className="btn-primary">Shop Women</Link>
+            <Link href="/products?gender=MEN" className="btn-secondary">Shop Men</Link>
           </div>
         </div>
       ) : (
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Cart items */}
           <div className="lg:col-span-2 space-y-4">
-            {calculatedTotal < 999 && (
+            {discountedSubtotal < 999 && (
               <div className="bg-brand-50 border border-brand-200 rounded-2xl p-4">
                 <p className="text-sm text-brand-700 font-medium mb-2">
-                  Add {formatPrice(999 - calculatedTotal)} more for FREE shipping!
+                  Add {formatPrice(999 - discountedSubtotal)} more for FREE shipping!
                 </p>
                 <div className="h-2 bg-brand-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-brand-600 rounded-full" style={{ width: `${Math.min((calculatedTotal / 999) * 100, 100)}%` }} />
+                  <div className="h-full bg-brand-600 rounded-full" style={{ width: `${Math.min((discountedSubtotal / 999) * 100, 100)}%` }} />
                 </div>
               </div>
             )}
-            {calculatedTotal >= 999 && (
+            {discountedSubtotal >= 999 && (
               <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-2">
                 <Gift className="w-4 h-4 text-green-600" />
                 <p className="text-sm text-green-700 font-semibold">You qualify for FREE shipping!</p>
@@ -167,7 +151,7 @@ export default function CartPage() {
 
             {items.map((item) => {
               const primaryImg = item.product.images?.find((i) => i.isPrimary) || item.product.images?.[0];
-              const price = item.product.salePrice || item.product.basePrice;
+              const price = item.product.salePrice ?? item.product.basePrice;
               return (
                 <div key={item.id} className="card p-5 flex gap-5">
                   {primaryImg && (
@@ -263,17 +247,6 @@ export default function CartPage() {
                       {applyingCoupon ? "Applying..." : "Apply"}
                     </button>
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {['FIRST20', 'Allendesi200'].map((code) => (
-                      <button
-                        key={code}
-                        onClick={() => setCouponInput(code)}
-                        className="text-xs bg-brand-50 text-brand-700 border border-brand-200 px-2.5 py-1 rounded-full font-medium hover:bg-brand-100 transition-colors"
-                      >
-                        {code}
-                      </button>
-                    ))}
-                  </div>
                 </>
               ) : (
                 <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl p-3 animate-fade-in">
@@ -325,7 +298,7 @@ export default function CartPage() {
 
             {/* Assurance */}
             <div className="card p-4 space-y-2">
-              {['100% Authentic Products', 'Easy 7-Day Returns', 'Secure Payment Gateway', 'Expert Hair Consultants'].map((text) => (
+              {['Authentic Products', 'Easy 7-Day Returns', 'Secure Payment Gateway', 'Marketplace Support'].map((text) => (
                 <div key={text} className="flex items-center gap-2 text-xs text-gray-600">
                   <span className="text-green-500">✓</span> {text}
                 </div>

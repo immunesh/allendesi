@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { api } from "@/lib/api";
 
 export default function EditProductPage() {
 const params = useParams();
@@ -10,6 +11,11 @@ const router = useRouter();
 
 const [loading, setLoading] = useState(true);
 const [categories, setCategories] = useState<any[]>([]);
+const [sellers, setSellers] = useState<Array<{ id: string; email: string; firstName: string; lastName: string }>>([]);
+const [sellerId, setSellerId] = useState("");
+const [productSellerId, setProductSellerId] = useState<string | null>(null);
+const [sellerLoadError, setSellerLoadError] = useState("");
+const [assigningSeller, setAssigningSeller] = useState(false);
 const [mainImage, setMainImage] = useState<File | null>(null);
 const [galleryImages, setGalleryImages] = useState<File[]>([]);
 
@@ -75,6 +81,7 @@ const [includedItems, setIncludedItems] = useState([
 useEffect(() => {
 fetchProduct();
 fetchCategories();
+fetchSellers();
 }, []);
 
 async function fetchCategories() {
@@ -94,8 +101,16 @@ const res = await fetch(
 } catch (error) {
   console.error(error);
 }
+}
 
-
+async function fetchSellers() {
+try {
+  const { data } = await api.get("/users/admin/all");
+  const users = Array.isArray(data.data) ? data.data : [];
+  setSellers(users.filter((user: { role: string }) => user.role === "SELLER"));
+} catch (error: any) {
+  setSellerLoadError(error?.response?.data?.message || "Could not load seller accounts");
+}
 }
 
 async function fetchProduct() {
@@ -108,6 +123,7 @@ const res = await fetch(
 
   const data = await res.json();
   const product = data.data;
+setProductSellerId(product.sellerId || null);
 setExistingImages(
   product.images?.map((img: any) => img.url) || []
 );
@@ -197,6 +213,23 @@ setIncludedItems(
 
 }
 
+async function assignProductToSeller() {
+  if (!sellerId) {
+    alert("Select a seller first");
+    return;
+  }
+  setAssigningSeller(true);
+  try {
+    const { data } = await api.patch(`/products/admin/${params.id}/assign-seller`, { sellerId });
+    setProductSellerId(data.data.sellerId);
+    alert("Product assigned to seller successfully");
+  } catch (error: any) {
+    alert(error?.response?.data?.message || "Could not assign product to seller");
+  } finally {
+    setAssigningSeller(false);
+  }
+}
+
 async function handleUpdate(
 e: React.FormEvent
 ) {
@@ -252,6 +285,7 @@ for (const image of galleryImages) {
       headers: {
         "Content-Type":
           "application/json",
+        Authorization: `Bearer ${localStorage.getItem("accessToken") || ""}`,
       },
      body: JSON.stringify({
   ...form,
@@ -430,6 +464,41 @@ return (
             <option value="WOMEN">WOMEN</option>
             <option value="UNISEX">UNISEX</option>
           </select>
+        </div>
+
+        <div className="md:col-span-2 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <label className="block mb-2 text-sm font-medium text-slate-300">Seller ownership</label>
+          {productSellerId ? (
+            <p className="text-sm text-green-300">
+              Assigned to {sellers.find((seller) => seller.id === productSellerId)?.email || "a seller account"}. Ownership cannot be changed here.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <select
+                value={sellerId}
+                onChange={(event) => setSellerId(event.target.value)}
+                disabled={sellers.length === 0 || assigningSeller}
+                className="min-h-11 flex-1 rounded-xl border border-white/10 bg-[#131827] px-3 text-white"
+              >
+                <option value="">{sellers.length ? "Select the product's seller" : "No seller accounts available"}</option>
+                {sellers.map((seller) => (
+                  <option key={seller.id} value={seller.id}>
+                    {seller.firstName} {seller.lastName} · {seller.email}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => void assignProductToSeller()}
+                disabled={!sellerId || assigningSeller}
+                className="min-h-11 rounded-xl bg-red-600 px-4 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {assigningSeller ? "Assigning..." : "Assign to seller"}
+              </button>
+            </div>
+          )}
+          {sellerLoadError && <p className="mt-2 text-xs text-red-300">{sellerLoadError}</p>}
+          {!productSellerId && <p className="mt-2 text-xs text-slate-400">Unassigned products stay hidden from sellers until an administrator assigns them.</p>}
         </div>
 
         <div>
@@ -680,7 +749,7 @@ return (
               tags: e.target.value,
             })
           }
-          placeholder="hair, wig, premium"
+          placeholder="fashion, home, everyday"
           className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50"
         />
       </div>

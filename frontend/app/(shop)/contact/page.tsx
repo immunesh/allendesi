@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { Phone, Mail, MapPin, Clock, MessageCircle, Send, Loader2, CheckCircle } from 'lucide-react';
 
 const CONTACT_TOPICS = [
-  'Order Enquiry', 'Returns & Refunds', 'Product Information', 'Virtual Try-On Help',
-  'Store Consultation Booking', 'Wholesale / B2B', 'Media & PR', 'Affiliate Program', 'Careers', 'Other',
+  'Order Enquiry', 'Returns & Refunds', 'Product Information', 'Store Enquiry',
+  'Wholesale / B2B', 'Media & PR', 'Affiliate Program', 'Careers', 'Other',
 ];
 
 export default function ContactPage() {
@@ -35,7 +35,7 @@ export default function ContactPage() {
         <div className="container-custom max-w-2xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-4">Get in Touch</h1>
           <p className="text-white/75 text-lg">
-            Our certified hair specialists are here to help — Mon–Sun, 9 AM to 9 PM.
+            Our support team is here to help with products, orders, and your account.
           </p>
         </div>
       </div>
@@ -183,7 +183,7 @@ export default function ContactPage() {
                 <MessageCircle className="w-5 h-5 text-green-600" />
                 <h3 className="font-bold text-green-900">Live Chat Available</h3>
               </div>
-              <p className="text-sm text-green-700 mb-3">Connect instantly with a hair specialist.</p>
+              <p className="text-sm text-green-700 mb-3">Connect with our customer support team.</p>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                 <p className="text-xs text-green-600 font-medium">12 specialists online now</p>
@@ -191,8 +191,8 @@ export default function ContactPage() {
             </div>
 
             <div className="card p-5">
-              <h3 className="font-bold text-gray-900 mb-3">Book In-Store Consultation</h3>
-              <p className="text-sm text-gray-600 mb-3">Visit any of our 50+ experience centres for a personalised wig fitting and consultation — completely free.</p>
+              <h3 className="font-bold text-gray-900 mb-3">Visit an Allendesi Store</h3>
+              <p className="text-sm text-gray-600 mb-3">Find a nearby location for in-person shopping and customer assistance.</p>
               <a href="/stores" className="btn-secondary text-sm py-2.5 w-full text-center block">Find Nearest Store →</a>
             </div>
           </div>

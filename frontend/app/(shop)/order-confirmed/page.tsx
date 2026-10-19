@@ -89,8 +89,8 @@ export default function OrderConfirmedPage() {
       {/* Review CTA */}
       <div className="card p-5 text-center">
         <Star className="w-8 h-8 text-amber-400 fill-amber-400 mx-auto mb-2" />
-        <h3 className="font-semibold text-gray-900 mb-1">Enjoying your new wig?</h3>
-        <p className="text-sm text-gray-500 mb-3">Share your experience and help others find their perfect style.</p>
+        <h3 className="font-semibold text-gray-900 mb-1">Enjoying your order?</h3>
+        <p className="text-sm text-gray-500 mb-3">Share your experience and help other shoppers choose.</p>
         <Link href="/profile" className="text-brand-600 text-sm font-semibold hover:underline">
           Write a Review →
         </Link>

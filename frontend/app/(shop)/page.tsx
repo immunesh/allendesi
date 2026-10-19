@@ -8,13 +8,14 @@ import {
   ChevronLeft, ChevronRight, Zap, Pause, Play,
   HeartPulse, Utensils, Shirt, Baby, Home, Sofa, Sun, BookOpen, PawPrint
 } from 'lucide-react';
-import ProductCard from '@/components/ui/ProductCard';
+import ProductCarousel from '@/components/marketplace/ProductCarousel';
 import { formatPrice } from '@/lib/utils';
  
 import { Category, Product } from '@/types';
 import { productsApi } from '@/lib/api';
 import { getCategories } from '@/lib/category-api';
 import { getHeroSlides } from '@/lib/hero-api';
+import { festivalsApi } from '@/lib/festival-api';
 
 const CATEGORY_ICONS = {
   wellness: HeartPulse,
@@ -93,13 +94,11 @@ function ProductSection({
   description,
   products,
   viewAllHref,
-  columns = 5,
 }: {
   title: string;
   description: string;
   products: Product[];
   viewAllHref: string;
-  columns?: 4 | 5;
 }) {
   return (
     <section className="py-7 md:py-9">
@@ -114,11 +113,7 @@ function ProductSection({
           </Link>
         </div>
         {products.length > 0 ? (
-          <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 ${columns === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-5'}`}>
-            {products.slice(0, columns).map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <ProductCarousel products={products} />
         ) : (
           <p className="rounded-lg border border-white/10 px-4 py-3 text-sm text-gray-500">
             No products are available in this collection right now.
@@ -183,6 +178,7 @@ export default function HomePage() {
   const [todayDeals, setTodayDeals] = useState<Product[]>([]);
   const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [featuredFestivals, setFeaturedFestivals] = useState<any[]>([]);
   const orderedCategories = categories.map((category) => ({
     ...category,
     href: `/products?category=${encodeURIComponent(category.slug)}`,
@@ -200,6 +196,11 @@ export default function HomePage() {
     };
 
     loadCategories();
+  }, []);
+
+  useEffect(() => {
+    festivalsApi.publicList().then(({ data }) => setFeaturedFestivals((data.data || []).filter((festival: any) => festival.isFeatured).slice(0, 3)))
+      .catch(() => setFeaturedFestivals([]));
   }, []);
 
 useEffect(() => {
@@ -236,8 +237,8 @@ useEffect(() => {
 
       setTodayDeals(
         list
-          .filter((p: Product) => p.salePrice && p.salePrice < p.basePrice)
-          .sort((a: Product, b: Product) => (b.basePrice - (b.salePrice || b.basePrice)) - (a.basePrice - (a.salePrice || a.basePrice)))
+          .filter((p: Product) => p.salePrice != null && p.salePrice < p.basePrice)
+          .sort((a: Product, b: Product) => (b.basePrice - (b.salePrice ?? b.basePrice)) - (a.basePrice - (a.salePrice ?? a.basePrice)))
           .slice(0, 4)
       );
 
@@ -277,7 +278,7 @@ const featuredDealImage =
   featuredDeal?.images?.[0]?.url ||
   "/img1.webp";
 const featuredDealDiscount =
-  featuredDeal?.salePrice && featuredDeal.basePrice > featuredDeal.salePrice
+  featuredDeal?.salePrice != null && featuredDeal.basePrice > featuredDeal.salePrice
     ? Math.round(((featuredDeal.basePrice - featuredDeal.salePrice) / featuredDeal.basePrice) * 100)
     : 0;
   return (
@@ -375,12 +376,14 @@ const featuredDealDiscount =
         </div>
       </section>
 
+      {featuredFestivals.length > 0 && <section className="container-custom py-7"><div className="mb-4 flex items-end justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-red-400">Celebrate together</p><h2 className="mt-1 text-2xl font-bold text-white">Featured festivals</h2></div><Link href="/festivals" className="text-sm font-semibold text-red-400 hover:text-red-300">All festivals <ArrowRight className="inline h-4 w-4" /></Link></div><div className="grid gap-3 sm:grid-cols-3">{featuredFestivals.map((festival) => <Link key={festival.id} href={`/festivals/${festival.slug}`} className="group relative flex min-h-40 items-end overflow-hidden border border-white/10 bg-[#171111] p-4">{(festival.thumbnail || festival.bannerImage) && <img src={festival.thumbnail || festival.bannerImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-55 transition-transform duration-500 group-hover:scale-105" />}<div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent" /><div className="relative"><h3 className="text-lg font-semibold text-white">{festival.name}</h3><p className="mt-1 line-clamp-1 text-xs text-gray-300">{festival.promotionalText || festival.description}</p></div></Link>)}</div></section>}
+
       {/* ─── CATEGORIES ──────────────────────────────────────────────── */}
       <section className="py-10 md:py-12 container-custom">
     <div className="text-center mb-8 md:mb-10">
     <h2 className="section-title">Shop by Category</h2>
     <p className="section-subtitle">
-      Find the perfect wig for your lifestyle and personality
+      Browse fashion, beauty, home, and everyday essentials from Allendesi sellers.
     </p>
   </div>
 
@@ -451,7 +454,6 @@ const featuredDealDiscount =
         description="Limited-time savings on selected products"
         products={todayDeals}
         viewAllHref="/products?collection=sale"
-        columns={4}
       />
 
       <ProductSection
@@ -459,7 +461,6 @@ const featuredDealDiscount =
         description="Popular products shoppers are rating highly"
         products={trendingProducts}
         viewAllHref="/products?collection=featured"
-        columns={4}
       />
 
       {/* ─── FEATURED DEAL ──────────────────────────────────────── */}
@@ -478,7 +479,7 @@ const featuredDealDiscount =
                   ? `Take a look at ${featuredDeal.name} and more customer favorites on offer.`
                   : "Browse popular picks and discover limited-time prices across the store."}
               </p>
-              {featuredDeal?.salePrice && (
+              {featuredDeal?.salePrice != null && featuredDeal.salePrice < featuredDeal.basePrice && (
                 <div className="mt-5 flex items-center gap-3">
                   <span className="text-xl font-bold text-white">
                     {formatPrice(featuredDeal.salePrice)}
@@ -523,6 +524,27 @@ const featuredDealDiscount =
         </div>
       </section>
 
+      <section className="border-y border-white/10 bg-[#101010] py-10 sm:py-14">
+        <div className="container-custom grid gap-8 md:grid-cols-[1.2fr_1fr] md:items-center">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-red-400">Sell on Allendesi</p>
+            <h2 className="mt-3 max-w-xl text-3xl font-bold leading-tight text-white sm:text-4xl">Grow Your Business with Allendesi.</h2>
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/65 sm:text-base">List your products, manage orders, and track sales from one seller dashboard.</p>
+            <Link href="/seller/register" className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-md bg-red-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-500">
+              Start Selling <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-3 gap-3 border-t border-white/10 pt-5 md:border-l md:border-t-0 md:pl-8 md:pt-0">
+            {['List products', 'Manage orders', 'Track sales'].map((item, index) => (
+              <div key={item} className="min-h-24 border-l-2 border-red-500 pl-3">
+                <span className="text-xs font-bold text-red-400">0{index + 1}</span>
+                <p className="mt-2 text-sm font-semibold leading-snug text-white sm:text-base">{item}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ─── GENDER SPLIT BANNER ──────────────────────────────────── */}
       <section className="py-16 container-custom">
         <div className="grid md:grid-cols-2 gap-6">
@@ -537,8 +559,8 @@ const featuredDealDiscount =
             <div className="absolute inset-0 bg-gradient-to-r from-pink-900/80 via-brand-900/60 to-transparent" />
             <div className="absolute inset-0 p-10 flex flex-col justify-end">
               <span className="badge bg-white/20 text-white mb-3 self-start backdrop-blur-sm">For Her</span>
-              <h3 className="text-3xl md:text-4xl font-display font-bold text-white mb-2">Women&apos;s Wigs</h3>
-              <p className="text-white/75 mb-5 max-w-xs">From silky straight to glamorous curls — express every side of you.</p>
+              <h3 className="text-3xl md:text-4xl font-display font-bold text-white mb-2">Shop Women</h3>
+              <p className="text-white/75 mb-5 max-w-xs">Explore fashion, accessories, beauty, and more for every day and every occasion.</p>
               <span className="inline-flex items-center gap-2 bg-white text-brand-700 font-bold px-5 py-2.5 rounded-full self-start group-hover:bg-brand-50 transition-colors">
                 Explore <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </span>
@@ -556,8 +578,8 @@ const featuredDealDiscount =
             <div className="absolute inset-0 bg-gradient-to-r from-gray-900/85 via-brand-950/60 to-transparent" />
             <div className="absolute inset-0 p-10 flex flex-col justify-end">
               <span className="badge bg-white/20 text-white mb-3 self-start backdrop-blur-sm">For Him</span>
-              <h3 className="text-3xl md:text-4xl font-display font-bold text-white mb-2">Men&apos;s Hair Systems</h3>
-              <p className="text-white/75 mb-5 max-w-xs">Undetectable Swiss lace hair systems. Natural look, zero compromise.</p>
+              <h3 className="text-3xl md:text-4xl font-display font-bold text-white mb-2">Shop Men</h3>
+              <p className="text-white/75 mb-5 max-w-xs">Find clothing, footwear, accessories, and everyday essentials from marketplace sellers.</p>
               <span className="inline-flex items-center gap-2 bg-white text-brand-700 font-bold px-5 py-2.5 rounded-full self-start group-hover:bg-brand-50 transition-colors">
                 Explore <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </span>

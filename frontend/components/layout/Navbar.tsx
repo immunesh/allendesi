@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Search, ShoppingBag, Heart, User, Menu, X, ChevronDown,
   Phone, Sparkles, LogOut, Package, Home, Store,
@@ -11,43 +11,26 @@ import { useAuthStore, useCartStore, useWishlistStore, useUIStore } from '@/lib/
 import { getCategories } from '@/lib/category-api';
 import { cn } from '@/lib/utils';
 
-type NavLink = {
-  label: string;
-  href: string;
-  mega?: { label: string; href: string }[];
-  megaTitle?: string;
-};
-
-const NAV_LINKS: NavLink[] = [
-  {
-    label: 'All Categories',
-    href: '/shop',
-    megaTitle: 'SHOP BY CATEGORY',
-    mega: [],
-  },
-  {
-    label: 'Easy Picks',
-    href: '/shop?collection=featured',
-  },
-  {
-    label: 'Best Bargains',
-    href: '/shop?collection=sale',
-  },
-  { label: 'Offers', href: '/shop?collection=sale' },
-  { label: 'Deals', href: '/shop?collection=sale' },
-  { label: 'Festival Store', href: '/shop?collection=sale' },
-  { label: 'Indian Fashion', href: '/shop?collection=new' },
+const NAV_LINKS = [
+  { label: 'Easy Picks', href: '/market/easy-picks' },
+  { label: 'Best Bargains', href: '/market/best-bargains' },
+  { label: 'Offers', href: '/market/offers' },
+  { label: 'Deals', href: '/market/deals' },
+  { label: 'Festival Store', href: '/market/festival-store' },
+  { label: 'Festivals', href: '/festivals' },
+  { label: 'Indian Fashion', href: '/market/indian-fashion' },
   { label: 'Become a Seller', href: '/seller/register' },
 ];
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, isAuthenticated, clearAuth } = useAuthStore();
   const cartStore = useCartStore();
   const { items: wishlistItems } = useWishlistStore();
   const { isSearchOpen, toggleSearch, isMobileMenuOpen, toggleMobileMenu, closeMobileMenu } = useUIStore();
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
-  const [categories, setCategories] = useState<Array<{ name: string; slug: string }>>([]);
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string }>>([]);
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -65,7 +48,7 @@ export default function Navbar() {
 
   useEffect(() => {
     getCategories()
-      .then((items) => setCategories(items))
+      .then((items) => setCategories(Array.isArray(items) ? items : []))
       .catch((error) => console.error('Failed to load categories:', error));
   }, []);
 
@@ -87,18 +70,7 @@ export default function Navbar() {
   };
 
   const itemCount = cartStore.itemCount;
-  const navLinks = NAV_LINKS.map((link) =>
-    link.label === 'All Categories'
-      ? {
-          ...link,
-          mega: categories.map((category) => ({
-            label: category.name,
-            href: `/products?category=${encodeURIComponent(category.slug)}`,
-          })),
-        }
-      : link
-  );
-
+  const isCategoryRoute = pathname === '/categories' || pathname === '/products';
   return (
     <>
       {/* Top bar */}
@@ -111,7 +83,7 @@ export default function Navbar() {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-brand-300">Free shipping above ₹999</span>
-            <Link href="/blog" className="hover:text-brand-300 transition-colors">Hair Care Tips</Link>
+            <Link href="/blog" className="hover:text-brand-300 transition-colors">Shopping Guides</Link>
           </div>
         </div>
       </div>
@@ -142,7 +114,7 @@ export default function Navbar() {
                     type="search"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search wigs, hair systems, styles..."
+                    placeholder="Search products, brands, and categories..."
                     className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm text-white placeholder:text-gray-400 focus:outline-none"
                   />
                   <button type="submit" className="mr-1 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700">
@@ -256,57 +228,61 @@ export default function Navbar() {
         <div className="border-b border-gray-800/80 bg-[#0d0d0d]">
           <div className="w-full px-3 sm:px-5 xl:px-8">
             <nav aria-label="Main navigation" className="hidden h-[52px] w-full items-center justify-between gap-1 overflow-visible py-1 lg:flex">
-              {navLinks.map((link) => (
-                <div
-                  key={link.label}
-                  className="relative z-20 h-full min-w-0 flex-1"
-                  onMouseEnter={() => link.mega && setActiveMenu(link.label)}
-                  onMouseLeave={() => setActiveMenu(null)}
+              <div
+                className="relative z-30 h-full min-w-0 flex-[1.15]"
+                onMouseEnter={() => setActiveMenu('categories')}
+                onMouseLeave={() => setActiveMenu(null)}
+              >
+                <button
+                  type="button"
+                  aria-expanded={activeMenu === 'categories'}
+                  aria-current={isCategoryRoute ? 'page' : undefined}
+                  aria-controls="desktop-category-menu"
+                  onClick={() => setActiveMenu('categories')}
+                  className={cn('flex h-full w-full items-center justify-center gap-1 whitespace-nowrap border-b-2 px-1 text-sm font-medium transition-colors xl:px-2', activeMenu === 'categories' || isCategoryRoute ? 'border-red-500 text-red-400' : 'border-transparent text-gray-100 hover:text-red-300')}
                 >
-                  <Link
-                    href={link.href}
-                    onClick={(e) => {
-                      if (link.mega) {
-                        e.preventDefault();
-                        setActiveMenu((prev) => (prev === link.label ? null : link.label));
-                      }
-                    }}
-                    onFocus={() => link.mega && setActiveMenu(link.label)}
-                    className={cn(
-                      'flex h-full w-full items-center justify-center gap-1 whitespace-nowrap rounded-md px-1 text-sm font-medium transition-colors xl:px-2',
-                      link.label === 'All Categories'
-                        ? 'px-3 text-white hover:text-brand-400'
-                        : 'text-gray-200 hover:text-brand-400',
-                      activeMenu === link.label && 'text-brand-400'
-                    )}
-                  >
-                    {link.label}
-                    {link.mega && <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', activeMenu === link.label && 'rotate-180')} />}
-                  </Link>
-
-                  {link.mega && activeMenu === link.label && (
-                    <div className="absolute left-0 top-full z-[60] max-h-[calc(100dvh-8rem)] w-64 overflow-y-auto rounded-xl border border-gray-800 bg-gray-950 p-4 shadow-2xl animate-fade-in">
-                      {link.megaTitle && <p className="mb-2 px-3 text-[11px] font-semibold tracking-wide text-brand-400">{link.megaTitle}</p>}
+                  All Categories <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', activeMenu === 'categories' && 'rotate-180')} />
+                </button>
+                {activeMenu === 'categories' && (
+                  <div id="desktop-category-menu" className="absolute left-0 top-full z-[60] max-h-[calc(100dvh-8rem)] w-72 overflow-y-auto border border-gray-800 bg-gray-950 p-4 shadow-2xl">
+                    <p className="mb-2 px-2 text-[11px] font-semibold tracking-wide text-red-400">SHOP BY CATEGORY</p>
+                    {categories.length > 0 ? (
                       <div className="grid grid-cols-2 gap-1">
-                        {link.mega.map((item) => (
+                        {categories.map((category) => (
                           <Link
-                            key={item.label}
-                            href={item.href}
-                            className="rounded-lg px-3 py-2 text-sm leading-snug text-gray-300 transition-colors hover:bg-gray-900 hover:text-brand-400"
+                            key={category.id || category.slug}
+                            href={`/products?category=${encodeURIComponent(category.slug)}`}
+                            onClick={() => setActiveMenu(null)}
+                            className="px-2 py-2 text-sm leading-snug text-gray-300 transition-colors hover:bg-gray-900 hover:text-red-400"
                           >
-                            {item.label}
+                            {category.name}
                           </Link>
                         ))}
                       </div>
-                      <div className="mt-3 border-t border-gray-800 pt-3">
-                        <Link href={link.href} className="text-sm font-semibold text-brand-400 hover:text-brand-300">
-                          View All {link.label} <span aria-hidden="true">→</span>
-                        </Link>
-                      </div>
+                    ) : (
+                      <p className="px-2 py-3 text-sm text-gray-400">Categories are loading or unavailable.</p>
+                    )}
+                    <div className="mt-3 border-t border-gray-800 pt-3">
+                      <Link href="/categories" onClick={() => setActiveMenu(null)} className="px-2 text-sm font-semibold text-red-400 hover:text-red-300">
+                        View All Categories <span aria-hidden="true">→</span>
+                      </Link>
                     </div>
-                  )}
-                </div>
-              ))}
+                  </div>
+                )}
+              </div>
+              {NAV_LINKS.map((link) => {
+                const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
+                return (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={cn('flex h-full min-w-0 flex-1 items-center justify-center whitespace-nowrap border-b-2 px-1 text-sm font-medium transition-colors xl:px-2', isActive ? 'border-red-500 text-red-400' : 'border-transparent text-gray-100 hover:text-red-300')}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
             </nav>
           </div>
         </div>
@@ -322,7 +298,7 @@ export default function Navbar() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search for wigs, hair systems, styles..."
+                  placeholder="Search products, brands, and categories..."
                   className="w-full pl-12 pr-12 py-3 border-2 border-brand-300 rounded-full focus:outline-none focus:border-brand-500 text-sm"
                 />
                 <button
@@ -335,7 +311,7 @@ export default function Navbar() {
               </div>
               <div className="flex items-center gap-2 mt-2 max-w-2xl mx-auto">
                 <span className="text-xs text-gray-500">Popular:</span>
-                {['Lace Front', 'Human Hair', "Men's System", 'Curly', 'Ombre'].map((t) => (
+                {['Fashion', 'Home & Kitchen', 'Beauty', 'Food', 'Books'].map((t) => (
                   <button
                     key={t}
                     type="button"
@@ -379,32 +355,46 @@ export default function Navbar() {
                 </button>
               </div>
 
-              {navLinks.map((link) => (
+              <div className="mb-2">
+                <button
+                  type="button"
+                  aria-expanded={activeMenu === 'mobile-categories'}
+                  aria-current={isCategoryRoute ? 'page' : undefined}
+                  onClick={() => setActiveMenu((current) => current === 'mobile-categories' ? null : 'mobile-categories')}
+                  className={cn('flex w-full items-center justify-between rounded-lg px-3 py-3 font-medium hover:bg-gray-900', isCategoryRoute ? 'text-red-400' : 'text-gray-100')}
+                >
+                  All Categories
+                  <ChevronDown className={cn('h-4 w-4 transition-transform', activeMenu === 'mobile-categories' && 'rotate-180')} />
+                </button>
+                {activeMenu === 'mobile-categories' && (
+                  <div className="mt-1 grid grid-cols-2 gap-1 pl-3">
+                    {categories.map((category) => (
+                      <Link
+                        key={category.id || category.slug}
+                        href={`/products?category=${encodeURIComponent(category.slug)}`}
+                        onClick={closeMobileMenu}
+                        className="rounded-lg px-3 py-2 text-sm text-gray-400 hover:text-red-400"
+                      >
+                        {category.name}
+                      </Link>
+                    ))}
+                    <Link href="/categories" onClick={closeMobileMenu} className="col-span-2 rounded-lg px-3 py-2 text-sm font-semibold text-red-400 hover:text-red-300">
+                      Browse all categories
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              {NAV_LINKS.map((link) => (
                 <div key={link.label} className="mb-2">
                   <Link
                     href={link.href}
                     onClick={closeMobileMenu}
-                    className="flex items-center justify-between rounded-lg px-3 py-3 font-medium text-gray-100 hover:bg-gray-900"
+                    aria-current={pathname === link.href ? 'page' : undefined}
+                    className={cn('flex items-center justify-between rounded-lg px-3 py-3 font-medium hover:bg-gray-900', pathname === link.href ? 'text-red-400' : 'text-gray-100')}
                   >
                     {link.label}
                   </Link>
-                  {link.mega && (
-                    <div className="mt-1 pl-4">
-                      {link.megaTitle && <p className="px-3 pb-1 pt-2 text-[11px] font-semibold tracking-wide text-brand-400">{link.megaTitle}</p>}
-                      <div className="grid grid-cols-2 gap-1">
-                        {link.mega.map((item) => (
-                          <Link
-                            key={item.label}
-                            href={item.href}
-                            onClick={closeMobileMenu}
-                            className="rounded-lg px-3 py-2 text-sm text-gray-400 hover:text-brand-400"
-                          >
-                            {item.label}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               ))}
 

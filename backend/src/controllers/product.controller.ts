@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { prisma } from "../db/prisma";
 import { AppError } from "../middleware/error.middleware";
+import { AuthRequest } from "../middleware/auth.middleware";
+import { resolveProductPrices } from "../services/pricing.service";
 import { ALLENDESI_CATEGORIES, isAllendesiCategory } from "../constants/categories";
 
 const INVALID_CATEGORY_MESSAGE =
@@ -32,6 +34,7 @@ export const getProducts = async (
 
   const where: Record<string, any> = {
     isActive: true,
+    categoryId: { not: null },
   };
 
   if (gender) where.gender = (gender as string).toUpperCase();
@@ -98,10 +101,11 @@ export const getProducts = async (
     ...p,
     tags: safeParseJson(p.tags, []),
   }));
+  const priced = await resolveProductPrices(parsed);
 
   res.json({
     success: true,
-    data: parsed,
+    data: priced,
     pagination: {
       page: pageNum,
       limit: limitNum,
@@ -159,16 +163,15 @@ export const getProductById = async (
     throw new AppError("Product not found", 404);
   }
 
+  const [pricedProduct] = await resolveProductPrices([{
+    ...product,
+    tags: safeParseJson(product.tags, []),
+    reviews: product.reviews.map((review) => ({ ...review, images: safeParseJson(review.images, []) })),
+  }]);
+
   res.json({
     success: true,
-    data: {
-      ...product,
-      tags: safeParseJson(product.tags, []),
-      reviews: product.reviews.map((r) => ({
-        ...r,
-        images: safeParseJson(r.images, []),
-      })),
-    },
+    data: pricedProduct,
   });
 };
 
@@ -214,13 +217,63 @@ export const getFeaturedProducts = async (
     take: 8,
   });
 
+  const parsed = products.map((product) => ({ ...product, tags: safeParseJson(product.tags, []) }));
+  const priced = await resolveProductPrices(parsed);
   res.json({
     success: true,
-    data: products.map((p) => ({
-      ...p,
-      tags: safeParseJson(p.tags, []),
-    })),
+    data: priced,
   });
+};
+
+export const getSellerProducts = async (req: AuthRequest, res: Response): Promise<void> => {
+  const products = await prisma.product.findMany({
+    where: { sellerId: req.user!.userId },
+    include: {
+      images: true,
+      category: { select: { id: true, name: true, slug: true } },
+      sellerOffers: { orderBy: { updatedAt: 'desc' }, take: 1 },
+    },
+    orderBy: { updatedAt: 'desc' },
+  });
+  res.json({ success: true, data: products.map((product) => ({ ...product, tags: safeParseJson(product.tags, []) })) });
+};
+
+export const assignProductToSeller = async (req: AuthRequest, res: Response): Promise<void> => {
+  const sellerId = typeof req.body.sellerId === 'string' ? req.body.sellerId.trim() : '';
+  if (!sellerId) throw new AppError('A seller must be selected', 400);
+
+  const product = await prisma.$transaction(async (tx) => {
+    const existingProduct = await tx.product.findUnique({
+      where: { id: req.params.id },
+      select: { id: true, sellerId: true },
+    });
+    if (!existingProduct) throw new AppError('Product not found', 404);
+
+    const seller = await tx.user.findUnique({
+      where: { id: sellerId },
+      select: { id: true, role: true },
+    });
+    if (!seller || seller.role !== 'SELLER') throw new AppError('Selected account is not a seller', 400);
+
+    if (existingProduct.sellerId && existingProduct.sellerId !== seller.id) {
+      throw new AppError('Product is already assigned to another seller', 409);
+    }
+
+    if (!existingProduct.sellerId) {
+      const assigned = await tx.product.updateMany({
+        where: { id: existingProduct.id, sellerId: null },
+        data: { sellerId: seller.id },
+      });
+      if (assigned.count !== 1) throw new AppError('Product ownership changed; reload and try again', 409);
+    }
+
+    return tx.product.findUniqueOrThrow({
+      where: { id: existingProduct.id },
+      include: { seller: { select: { id: true, firstName: true, lastName: true, email: true } } },
+    });
+  });
+
+  res.json({ success: true, data: product });
 };
 
 export const getRelatedProducts = async (
@@ -257,19 +310,18 @@ export const getRelatedProducts = async (
     take: 6,
   });
 
+  const parsed = related.map((product) => ({ ...product, tags: safeParseJson(product.tags, []) }));
+  const priced = await resolveProductPrices(parsed);
   res.json({
     success: true,
-    data: related.map((p) => ({
-      ...p,
-      tags: safeParseJson(p.tags, []),
-    })),
+    data: priced,
   });
 };
 
 /* -------------------- ADMIN CRUD -------------------- */
 
 export const createProduct = async (
-  req: Request,
+  req: AuthRequest,
   res: Response
 ): Promise<void> => {
   try {
@@ -306,6 +358,20 @@ export const createProduct = async (
     const normalizedName = String(name || '').trim() || 'New Product';
     const normalizedSlug = String(slug || '').trim() || `${normalizedName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
     const normalizedDescription = String(description || '').trim();
+    if (!req.user || !['ADMIN', 'SELLER'].includes(req.user.role)) {
+      throw new AppError('Insufficient permissions', 403);
+    }
+    const numericBasePrice = Number(basePrice);
+    const numericSalePrice = salePrice == null || salePrice === '' ? null : Number(salePrice);
+    if (!Number.isFinite(numericBasePrice) || numericBasePrice <= 0) {
+      throw new AppError('Original price must be greater than zero', 400);
+    }
+    if (numericSalePrice != null && (!Number.isFinite(numericSalePrice) || numericSalePrice < 0 || numericSalePrice >= numericBasePrice)) {
+      throw new AppError('Sale price must be non-negative and below the original price', 400);
+    }
+    if (req.user.role === 'SELLER' && numericSalePrice != null) {
+      throw new AppError('Create a seller offer to discount your product', 400);
+    }
 
     const parseArrayField = (value: unknown): any[] => {
       if (Array.isArray(value)) {
@@ -380,9 +446,9 @@ export const createProduct = async (
         texture,
         color,
         rating: Number(rating || 0),
-        isFeatured: parseBoolean(isFeatured),
-        isBestSeller: parseBoolean(isBestSeller),
-        isNewArrival: parseBoolean(isNewArrival),
+        isFeatured: req.user.role === 'ADMIN' ? parseBoolean(isFeatured) : false,
+        isBestSeller: req.user.role === 'ADMIN' ? parseBoolean(isBestSeller) : false,
+        isNewArrival: req.user.role === 'ADMIN' ? parseBoolean(isNewArrival) : false,
         tags: JSON.stringify(normalizedTags),
         category: {
           connect: {
@@ -390,8 +456,9 @@ export const createProduct = async (
           },
         },
         gender: gender || 'UNISEX',
-        basePrice: Number(basePrice || 0),
-        salePrice: salePrice ? Number(salePrice) : null,
+        basePrice: numericBasePrice,
+        salePrice: req.user.role === 'ADMIN' ? numericSalePrice : null,
+        seller: req.user.role === 'SELLER' ? { connect: { id: req.user.userId } } : undefined,
         stock: Number(stock || 0),
         sku: sku || `SKU-${Date.now()}`,
         brand: brand || 'Allendesi',
@@ -425,6 +492,10 @@ export const createProduct = async (
       data: product,
     });
   } catch (error: any) {
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({ success: false, message: error.message });
+      return;
+    }
     console.error('CREATE PRODUCT ERROR:');
     console.error(error);
 
@@ -436,11 +507,16 @@ export const createProduct = async (
 };
 
 export const updateProduct = async (
-  req: Request,
+  req: AuthRequest,
   res: Response
 ): Promise<void> => {
   try {
     const { id } = req.params;
+    if (!req.user || !['ADMIN', 'SELLER'].includes(req.user.role)) throw new AppError('Insufficient permissions', 403);
+    const existingProduct = await prisma.product.findUnique({ where: { id }, select: { id: true, sellerId: true } });
+    if (!existingProduct) throw new AppError('Product not found', 404);
+    const isAdmin = req.user.role === 'ADMIN';
+    if (!isAdmin && existingProduct.sellerId !== req.user.userId) throw new AppError('You do not own this product', 403);
 
     const {
       name,
@@ -471,6 +547,20 @@ export const updateProduct = async (
       careGuides,
       includedItems,
     } = req.body;
+
+    const numericBasePrice = Number(basePrice);
+    const numericSalePrice = salePrice == null || salePrice === '' ? null : Number(salePrice);
+    if (!Number.isFinite(numericBasePrice) || numericBasePrice <= 0) throw new AppError('Original price must be greater than zero', 400);
+    if (numericSalePrice != null && (!Number.isFinite(numericSalePrice) || numericSalePrice < 0 || numericSalePrice >= numericBasePrice)) {
+      throw new AppError('Sale price must be non-negative and below the original price', 400);
+    }
+    if (!isAdmin && numericSalePrice != null) throw new AppError('Manage seller discounts through the offers workflow', 400);
+    if (!isAdmin) {
+      const conflictingOffer = await prisma.sellerOffer.findFirst({
+        where: { productId: id, status: 'APPROVED', salePrice: { gte: numericBasePrice } },
+      });
+      if (conflictingOffer) throw new AppError('Original price cannot be reduced below an approved offer price', 409);
+    }
 
     const selectedCategoryId = String(categoryId || '').trim();
     const selectedCategory = selectedCategoryId
@@ -530,12 +620,12 @@ export const updateProduct = async (
         density,
         texture,
         color,
-        rating: Number(rating || 0),
-        isFeatured: Boolean(isFeatured),
-        isBestSeller: Boolean(isBestSeller),
-        isNewArrival: Boolean(isNewArrival),
-        basePrice: Number(basePrice || 0),
-        salePrice: salePrice ? Number(salePrice) : null,
+        rating: isAdmin ? Number(rating || 0) : undefined,
+        isFeatured: isAdmin ? Boolean(isFeatured) : undefined,
+        isBestSeller: isAdmin ? Boolean(isBestSeller) : undefined,
+        isNewArrival: isAdmin ? Boolean(isNewArrival) : undefined,
+        basePrice: numericBasePrice,
+        salePrice: isAdmin ? numericSalePrice : null,
         stock: Number(stock || 0),
         sku,
         brand,
@@ -581,6 +671,10 @@ export const updateProduct = async (
       data: product,
     });
   } catch (error: any) {
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({ success: false, message: error.message });
+      return;
+    }
     console.error('UPDATE PRODUCT ERROR:', error);
     res.status(500).json({
       success: false,
@@ -591,11 +685,16 @@ export const updateProduct = async (
 
 
 export const deleteProduct = async (
-  req: Request,
+  req: AuthRequest,
   res: Response
 ): Promise<void> => {
   try {
     const { id } = req.params;
+
+    if (!req.user || !['ADMIN', 'SELLER'].includes(req.user.role)) throw new AppError('Insufficient permissions', 403);
+    const existingProduct = await prisma.product.findUnique({ where: { id }, select: { id: true, sellerId: true } });
+    if (!existingProduct) throw new AppError('Product not found', 404);
+    if (req.user.role !== 'ADMIN' && existingProduct.sellerId !== req.user.userId) throw new AppError('You do not own this product', 403);
 
     await prisma.product.delete({
       where: { id },
@@ -606,6 +705,10 @@ export const deleteProduct = async (
       message: "Product deleted",
     });
   } catch (error) {
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({ success: false, message: error.message });
+      return;
+    }
     console.error(error);
 
     res.status(500).json({

@@ -56,7 +56,7 @@ export interface Product {
   slug: string;
   description: string;
   shortDesc?: string;
-  category: Category;
+  category?: Category | null;
   gender: 'MEN' | 'WOMEN' | 'UNISEX';
   basePrice: number;
   salePrice?: number;
@@ -99,6 +99,7 @@ highlights?: {
   id: string;
   text: string;
 }[];
+  festivalListing?: { id: string; festivalId: string; price?: number | null; discountPercent?: number | null; stock: number };
 }
 export interface CareGuide {
   id: string;

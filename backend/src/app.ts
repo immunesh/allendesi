@@ -25,6 +25,9 @@ import {
 import blogRoutes from "./routes/blog.routes";
 import storeRoutes from "./routes/store.routes";
 import dashboardRoutes from './routes/dashboard.routes';
+import offerRoutes from './routes/offer.routes';
+import campaignRoutes from './routes/campaign.routes';
+import festivalRoutes from './routes/festival.routes';
 
 const app = express();
 
@@ -140,6 +143,9 @@ app.use(
   "/api/coupons",
   couponRoutes
 );
+app.use('/api/offers', offerRoutes);
+app.use('/api/campaigns', campaignRoutes);
+app.use('/api/festivals', festivalRoutes);
 /* ---------------- UPLOAD ROUTES ---------------- */
 
 app.use(

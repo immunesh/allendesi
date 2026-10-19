@@ -52,7 +52,7 @@ export default function CheckoutPage() {
 
   const total = items.reduce(
     (sum, item) => {
-      const price = item.product.salePrice || item.product.basePrice;
+      const price = item.product.salePrice ?? item.product.basePrice;
       return sum + price * item.quantity;
     },
     0
@@ -117,15 +117,16 @@ export default function CheckoutPage() {
     setCouponInput(couponCode || '');
   }, [couponCode]);
 
-  const shipping = total >= 999 ? 0 : 99;
-  const tax = Math.max(total - discount, 0) * 0.18;
-  const grandTotal = Math.max(total + shipping + tax - discount, 0);
+  const discountedSubtotal = Math.max(total - discount, 0);
+  const shipping = discountedSubtotal >= 999 ? 0 : 99;
+  const tax = discountedSubtotal * 0.18;
+  const grandTotal = discountedSubtotal + shipping + tax;
 
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) return;
     try {
       setApplyingCoupon(true);
-      const { data } = await couponApi.apply(couponInput, total);
+      const { data } = await couponApi.apply(couponInput);
       setCoupon(couponInput.toUpperCase(), data.data.discount);
       showToast(`Coupon Applied! ₹${data.data.discount} off`, "success");
     } catch (err: any) {
@@ -172,7 +173,7 @@ export default function CheckoutPage() {
               <div className="space-y-4 mb-6">
                 {items.map((item) => {
                   const img = item.product.images?.find((i) => i.isPrimary) || item.product.images?.[0];
-                  const price = item.product.salePrice || item.product.basePrice;
+                  const price = item.product.salePrice ?? item.product.basePrice;
                   return (
                     <div key={item.id} className="flex gap-4 p-3 bg-gray-50 rounded-xl">
                       {img && <div className="relative w-16 h-20 rounded-lg overflow-hidden flex-shrink-0"><Image src={img.url} alt={item.product.name} fill className="object-cover" /></div>}
@@ -204,7 +205,7 @@ export default function CheckoutPage() {
                     <input
                       value={couponInput}
                       onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                      placeholder="e.g. FIRST20"
+                      placeholder="Enter coupon code"
                       className="input-field flex-1 text-sm py-2 uppercase"
                       disabled={applyingCoupon}
                       onKeyDown={(e) => {

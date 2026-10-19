@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
-import ProductCard from '@/components/ui/ProductCard';
-import { DEMO_PRODUCTS } from '@/lib/utils';
+import ProductCarousel from '@/components/marketplace/ProductCarousel';
 import { productsApi } from '@/lib/api';
 import { Product } from '@/types';
 
-const SUGGESTIONS = ['Lace Front', 'Human Hair', "Men's System", 'Curly Wig', 'Ombre', 'Body Wave', 'Synthetic', 'Short Bob', 'Afro', 'Straight'];
+const SUGGESTIONS = ['Fashion', 'Home & Kitchen', 'Beauty', 'Food', 'Books', 'Baby & Kids', 'Pet Care'];
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
@@ -36,17 +36,9 @@ export default function SearchPage() {
           (p.tags || []).some((t: string) => t.toLowerCase().includes(q))
         ) as unknown as Product[];
         if (mounted) setResults(matched);
-      } catch (e) {
-        // fallback to demo search
-        const q = query.toLowerCase();
-        const matched = DEMO_PRODUCTS.filter((p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          p.texture?.toLowerCase().includes(q) ||
-          p.material?.toLowerCase().includes(q) ||
-          p.tags.some((t) => t.toLowerCase().includes(q))
-        ) as unknown as Product[];
-        if (mounted) setResults(matched);
+      } catch (error) {
+        console.error('Product search failed:', error);
+        if (mounted) setResults([]);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -70,7 +62,7 @@ export default function SearchPage() {
             type="text"
             value={localQuery}
             onChange={(e) => setLocalQuery(e.target.value)}
-            placeholder="Search for wigs, hair systems, styles..."
+            placeholder="Search products, brands, and categories..."
             className="w-full pl-14 pr-14 py-4 border-2 border-gray-200 focus:border-brand-500 rounded-full text-base outline-none transition-colors bg-gray-50 focus:bg-white"
           />
           {localQuery && (
@@ -99,7 +91,7 @@ export default function SearchPage() {
         <div className="text-center py-16">
           <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Search Allendesi</h2>
-          <p className="text-gray-500">Find the perfect wig or hair system for you</p>
+          <p className="text-gray-500">Search the Allendesi marketplace by product, brand, or category.</p>
         </div>
       )}
 
@@ -130,14 +122,12 @@ export default function SearchPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No results found</h3>
               <p className="text-gray-500 mb-6">Try different keywords or explore our categories.</p>
               <div className="flex gap-3 justify-center flex-wrap">
-                <button onClick={() => { setLocalQuery('Human Hair'); router.push('/search?q=Human+Hair'); }} className="btn-primary text-sm py-2 px-5">Human Hair Wigs</button>
-                <button onClick={() => { setLocalQuery("Men's"); router.push('/search?q=Men'); }} className="btn-secondary text-sm py-2 px-5">Men&apos;s Hair Systems</button>
+                <Link href="/products?category=fashion-clothing" className="btn-primary text-sm py-2 px-5">Shop Fashion</Link>
+                <Link href="/products?category=home-kitchen" className="btn-secondary text-sm py-2 px-5">Shop Home &amp; Kitchen</Link>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-              {results.map((product) => <ProductCard key={product.id} product={product} />)}
-            </div>
+            <ProductCarousel products={results} />
           )}
         </div>
       )}

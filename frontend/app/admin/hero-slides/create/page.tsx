@@ -148,7 +148,7 @@ export default function CreateHeroSlidePage() {
             onChange={(e) =>
               setForm({ ...form, subheadline: e.target.value })
             }
-            placeholder="with Premium Human Hair Wigs"
+            placeholder="for every day and every occasion"
             className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50"
           />
         </div>
@@ -291,7 +291,7 @@ export default function CreateHeroSlidePage() {
                   ctaSecondaryLink: e.target.value,
                 })
               }
-              placeholder="/try-on"
+              placeholder="/products"
               className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50"
             />
           </div>

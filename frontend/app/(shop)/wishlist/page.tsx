@@ -106,10 +106,10 @@ export default function WishlistPage() {
             <Heart className="w-12 h-12 text-red-300" />
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Your wishlist is empty</h2>
-          <p className="text-gray-500 mb-8">Save your favourite wigs by clicking the heart icon on any product.</p>
+          <p className="text-gray-500 mb-8">Save products you love by selecting the heart on any product card.</p>
           <div className="flex gap-3 justify-center flex-wrap">
-            <Link href="/women" className="btn-primary">Shop Women&apos;s</Link>
-            <Link href="/men" className="btn-secondary">Shop Men&apos;s</Link>
+            <Link href="/products?gender=WOMEN" className="btn-primary">Shop Women</Link>
+            <Link href="/products?gender=MEN" className="btn-secondary">Shop Men</Link>
           </div>
         </div>
       ) : (
@@ -117,8 +117,10 @@ export default function WishlistPage() {
           {items.map(({ productId, product }) => {
             if (!product) return null;
             const primaryImg = product.images?.find((i) => i.isPrimary) || product.images?.[0];
-            const price = product.salePrice || product.basePrice;
-            const discount = product.salePrice ? getDiscountPercent(product.basePrice, product.salePrice) : 0;
+            const price = product.salePrice ?? product.basePrice;
+            const discount = product.salePrice != null && product.salePrice < product.basePrice
+              ? getDiscountPercent(product.basePrice, product.salePrice)
+              : 0;
 
             return (
               <div key={productId} className="card group overflow-hidden">
@@ -142,7 +144,7 @@ export default function WishlistPage() {
                   </Link>
                   <div className="flex items-center gap-1.5 mb-3">
                     <span className="font-bold text-gray-900">{formatPrice(price)}</span>
-                    {product.salePrice && <span className="text-xs text-gray-400 line-through">{formatPrice(product.basePrice)}</span>}
+                    {product.salePrice != null && product.salePrice < product.basePrice && <span className="text-xs text-gray-400 line-through">{formatPrice(product.basePrice)}</span>}
                   </div>
                   <button
                     onClick={() => handleMoveToCart(productId)}

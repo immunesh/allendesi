@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Grid, List, SlidersHorizontal, X, ChevronDown } from 'lucide-react';
-import ProductCard from '@/components/ui/ProductCard';
+import { SlidersHorizontal, X, ChevronDown } from 'lucide-react';
+import ProductCarousel from '@/components/marketplace/ProductCarousel';
 import FilterSidebar from '@/components/ui/FilterSidebar';
 import { productsApi } from '@/lib/api';
 import { Product } from '@/types';
@@ -25,9 +25,12 @@ export default function AllProductsPage() {
     return category ? { category } : {};
   });
   const [sort, setSort] = useState('createdAt-desc');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [activeGender, setActiveGender] = useState<'ALL' | 'WOMEN' | 'MEN'>('ALL');
+  useEffect(() => {
+    const gender = searchParams.get('gender')?.toUpperCase();
+    setActiveGender(gender === 'MEN' || gender === 'WOMEN' ? gender : 'ALL');
+  }, [searchParams]);
 const loadProducts = async () => {
   try {
     const { data } = await productsApi.getAll();
@@ -50,26 +53,6 @@ if (filters.category) {
   filtered = filtered.filter(
     (p: Product) => p.category?.slug === filters.category
   );
-}
-
-// Material filter
-if (filters.material) {
-  const materialMap: Record<string, string> = {
-    "human-hair": "human hair",
-    synthetic: "synthetic",
-    blend: "blend",
-  };
-
- const target =
-  materialMap[String(filters.material)];
-
-if (target) {
-  filtered = filtered.filter((p) =>
-    String(p.material || "")
-      .toLowerCase()
-      .includes(target)
-  );
-}
 }
 
 // Texture filter
@@ -128,8 +111,7 @@ if (filters.price) {
     .map(Number);
 
   filtered = filtered.filter((p) => {
-    const price =
-      p.salePrice || p.basePrice;
+    const price = p.salePrice ?? p.basePrice;
 
     return (
       price >= min &&
@@ -176,7 +158,7 @@ if (filters.collection) {
 
     if (
       selected.includes("sale") &&
-      p.salePrice
+      p.salePrice != null && p.salePrice < p.basePrice
     )
       return true;
 
@@ -217,16 +199,16 @@ switch (sort) {
   case "price-asc":
     sortedProducts.sort(
       (a, b) =>
-        (a.salePrice || a.basePrice) -
-        (b.salePrice || b.basePrice)
+        (a.salePrice ?? a.basePrice) -
+        (b.salePrice ?? b.basePrice)
     );
     break;
 
   case "price-desc":
     sortedProducts.sort(
       (a, b) =>
-        (b.salePrice || b.basePrice) -
-        (a.salePrice || a.basePrice)
+        (b.salePrice ?? b.basePrice) -
+        (a.salePrice ?? a.basePrice)
     );
     break;
 
@@ -257,9 +239,9 @@ switch (sort) {
 }
 
   const GENDER_TABS = [
-    { label: 'All Wigs', value: 'ALL' },
-    { label: "Women's Wigs", value: 'WOMEN' },
-    { label: "Men's Hair Systems", value: 'MEN' },
+    { label: 'All Products', value: 'ALL' },
+    { label: 'Women', value: 'WOMEN' },
+    { label: 'Men', value: 'MEN' },
   ] as const;
 
   return (
@@ -267,8 +249,8 @@ switch (sort) {
       {/* Page header */}
       <div className="page-hero py-10 text-center">
         <div className="container-custom">
-          <h1 className="text-3xl md:text-4xl font-display font-bold text-white mb-3">All Wigs & Hair Systems</h1>
-          <p className="text-white/70">Premium quality wigs for men and women</p>
+          <h1 className="text-3xl md:text-4xl font-display font-bold text-white mb-3">Shop All Products</h1>
+          <p className="text-white/70">Discover products across Allendesi marketplace categories.</p>
         </div>
       </div>
 
@@ -311,15 +293,9 @@ switch (sort) {
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500" />
               </div>
-              <div className="flex border border-gray-200 rounded-xl overflow-hidden">
-                <button onClick={() => setViewMode('grid')} className={`p-2 ${viewMode === 'grid' ? 'bg-brand-600 text-white' : 'text-gray-500 hover:bg-gray-50'}`}><Grid className="w-4 h-4" /></button>
-                <button onClick={() => setViewMode('list')} className={`p-2 ${viewMode === 'list' ? 'bg-brand-600 text-white' : 'text-gray-500 hover:bg-gray-50'}`}><List className="w-4 h-4" /></button>
-              </div>
             </div>
 
-            <div className={`grid gap-4 md:gap-6 ${viewMode === 'grid' ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4' : 'grid-cols-1'}`}>
-              {sortedProducts.map((product) => <ProductCard key={product.id} product={product} />)}
-            </div>
+            {sortedProducts.length > 0 && <ProductCarousel products={sortedProducts} />}
 
             {products.length === 0 && (
               <div className="text-center py-20">

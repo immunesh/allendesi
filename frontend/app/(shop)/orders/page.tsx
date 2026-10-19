@@ -10,30 +10,6 @@ import { Order } from '@/types';
 import { formatPrice, formatDate, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
-const MOCK_ORDERS: Order[] = [
-  {
-    id: '1', orderNumber: 'HU-DEMO-001', status: 'DELIVERED', paymentStatus: 'PAID',
-    subtotal: 3499, discount: 0, shipping: 0, tax: 629, total: 4128,
-    items: [{ id: '1', productId: '1', name: 'Silky Straight Lace Front Wig', image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=200', quantity: 1, price: 3499 }],
-    address: { id: '1', type: 'HOME', fullName: 'Priya Sharma', phone: '9876543210', line1: '123 MG Road', city: 'Mumbai', state: 'Maharashtra', pincode: '400001', country: 'India', isDefault: true },
-    tracking: [], createdAt: '2024-01-15',
-  },
-  {
-    id: '2', orderNumber: 'HU-DEMO-002', status: 'SHIPPED', paymentStatus: 'PAID',
-    subtotal: 5999, discount: 0, shipping: 0, tax: 1079, total: 7078,
-    items: [{ id: '2', productId: '3', name: "Men's Natural System Hairpiece", image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200', quantity: 1, price: 5999 }],
-    address: { id: '1', type: 'HOME', fullName: 'Rajesh Kumar', phone: '9876543211', line1: '456 Saket', city: 'New Delhi', state: 'Delhi', pincode: '110017', country: 'India', isDefault: true },
-    tracking: [], createdAt: '2024-01-22',
-  },
-  {
-    id: '3', orderNumber: 'HU-DEMO-003', status: 'PROCESSING', paymentStatus: 'PAID',
-    subtotal: 2799, discount: 200, shipping: 99, tax: 467, total: 3165,
-    items: [{ id: '3', productId: '8', name: 'Voluminous Afro Kinky Wig', image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=200', quantity: 1, price: 2799 }],
-    address: { id: '1', type: 'HOME', fullName: 'Ananya Patel', phone: '9876543212', line1: '789 Koramangala', city: 'Bangalore', state: 'Karnataka', pincode: '560095', country: 'India', isDefault: true },
-    tracking: [], createdAt: '2024-01-28',
-  },
-];
-
 export default function OrdersPage() {
   const { isAuthenticated } = useAuthStore();
   const [orders, setOrders] = useState<Order[]>([]);

@@ -1,28 +1,15 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, Clock, User } from 'lucide-react';
-import { getAllBlogs } from "@/lib/blog-api";
+import { ArrowRight, User } from 'lucide-react';
+import { getAllBlogs, isMarketplaceBlogPost } from '@/lib/blog-api';
 export const metadata: Metadata = {
-  title: 'Hair Care Blog & Style Guides | Allendesi',
-  description: 'Expert hair care tips, styling guides, and inspiration from the Allendesi team. Everything you need to know about wigs and hair systems.',
+  title: 'Allendesi Journal | Shopping Guides & Inspiration',
+  description: 'Ideas, product guides, and inspiration for shopping across the Allendesi marketplace.',
 };
-
- 
-
-const TAG_COLORS: Record<string, string> = {
-  'Beginner Guide': 'bg-green-100 text-green-700',
-  'Care Tips': 'bg-blue-100 text-blue-700',
-  "Men's Hair": 'bg-gray-100 text-gray-700',
-  'Style Guide': 'bg-pink-100 text-pink-700',
-  'Buying Guide': 'bg-amber-100 text-amber-700',
-  'Medical': 'bg-red-100 text-red-700',
-};
-
-const CATEGORIES = ['All', 'Beginner Guide', 'Care Tips', "Men's Hair", 'Style Guide', 'Buying Guide', 'Medical'];
 
 export default async function BlogPage() {
-  const blogs = await getAllBlogs();
+  const blogs = (await getAllBlogs()).filter(isMarketplaceBlogPost);
 
   const featured = blogs.slice(0, 2);
   const rest = blogs.slice(2);
@@ -33,19 +20,18 @@ export default async function BlogPage() {
       <div className="page-hero py-16 text-center">
         <div className="container-custom max-w-2xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-4">
-            Hair Care Blog & Style Guides
+            The Allendesi Journal
           </h1>
 
           <p className="text-white/75 text-lg">
-            Expert tips, styling guides, and inspiration from our certified
-            trichologists and style directors.
+            Shopping guides, product ideas, and inspiration from across the marketplace.
           </p>
         </div>
       </div>
 
       <div className="container-custom py-12">
         {/* Featured */}
-        <div className="grid md:grid-cols-2 gap-6 mb-12">
+        {featured.length > 0 ? <div className="grid md:grid-cols-2 gap-6 mb-12">
           {featured.map((post: any, i: number) => (
             <Link
               key={post.id}
@@ -96,14 +82,17 @@ export default async function BlogPage() {
               </div>
             </Link>
           ))}
-        </div>
+        </div> : (
+          <div className="mb-12 border border-dashed border-white/15 px-6 py-12 text-center">
+            <h2 className="text-xl font-semibold text-white">New stories are on the way</h2>
+            <p className="mt-2 text-sm text-white/60">Check back for product guides, shopping ideas, and marketplace news.</p>
+          </div>
+        )}
 
         {/* More Articles */}
-        <h2 className="text-2xl font-display font-bold text-gray-900 mb-6">
-          More Articles
-        </h2>
+        {rest.length > 0 && <h2 className="text-2xl font-display font-bold text-gray-900 mb-6">More Stories</h2>}
 
-        <div className="grid md:grid-cols-3 gap-6">
+        {rest.length > 0 && <div className="grid md:grid-cols-3 gap-6">
           {rest.map((post: any) => (
             <Link
               key={post.id}
@@ -130,7 +119,7 @@ export default async function BlogPage() {
               </div>
             </Link>
           ))}
-        </div>
+        </div>}
       </div>
     </div>
   );

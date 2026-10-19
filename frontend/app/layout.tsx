@@ -4,20 +4,19 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Allendesi — Premium Hair Wigs for Men & Women',
+    default: 'Allendesi | Premium E-commerce Marketplace',
     template: '%s | Allendesi',
   },
   description:
-    "India's #1 hair wig brand. Shop premium human hair wigs, synthetic wigs, and hair systems for men and women. Free shipping above ₹999.",
+    'Shop products across fashion, beauty, home, food, wellness, and more from Allendesi sellers. Free shipping above ₹999.',
   keywords: [
-    'hair wigs',
-    'human hair wigs',
-    'synthetic wigs',
-    "men's hair system",
-    "women's wigs",
-    'lace front wigs',
+    'online shopping India',
+    'fashion and lifestyle',
+    'home and kitchen',
+    'beauty and personal care',
+    'marketplace',
     'Allendesi',
-    'buy wigs online India',
+    'shop online India',
   ],
   authors: [{ name: 'Allendesi' }],
   metadataBase: new URL('http://localhost:3000'),
@@ -26,14 +25,13 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_IN',
     siteName: 'Allendesi',
-    title: 'Allendesi — Premium Hair Wigs for Men & Women',
-    description:
-      "India's #1 hair wig brand — premium human hair wigs & systems for men and women.",
+    title: 'Allendesi | Premium E-commerce Marketplace',
+    description: 'Discover products across fashion, beauty, home, food, wellness, and more on Allendesi.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Allendesi — Premium Hair Wigs',
-    description: "India's #1 hair wig brand.",
+    title: 'Allendesi | Premium E-commerce Marketplace',
+    description: 'Shop fashion, beauty, home, food, wellness, and more on Allendesi.',
   },
   robots: { index: true, follow: true },
 };
@@ -41,7 +39,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#c855f5',
+  themeColor: '#0b0b0b',
 };
 
 export default function RootLayout({

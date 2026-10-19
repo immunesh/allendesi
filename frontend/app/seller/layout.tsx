@@ -3,13 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Package, PlusCircle, ShoppingCart, BarChart3, Boxes, UserCircle, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Package, PlusCircle, ShoppingCart, BarChart3, Boxes, UserCircle, LogOut, Menu, X, Tag, Sparkles } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/lib/store';
 
 const links = [
   { href: '/seller', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/seller/products', label: 'My Products', icon: Package },
   { href: '/seller/products/add', label: 'Add Product', icon: PlusCircle },
+  { href: '/seller/offers', label: 'Offers & Discounts', icon: Tag },
+  { href: '/seller/festivals', label: 'Festivals', icon: Sparkles },
   { href: '/seller/orders', label: 'Orders', icon: ShoppingCart },
   { href: '/seller/sales', label: 'Sales', icon: BarChart3 },
   { href: '/seller/inventory', label: 'Inventory', icon: Boxes },

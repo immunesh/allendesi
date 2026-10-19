@@ -2,11 +2,7 @@
 
 import { useRouter } from "next/navigation";
 
-export default function DeleteProductButton({
-  id,
-}: {
-  id: string;
-}) {
+export default function DeleteProductButton({ id }: { id: string }) {
   const router = useRouter();
 
   async function handleDelete() {
@@ -20,6 +16,9 @@ export default function DeleteProductButton({
       `http://localhost:5000/api/products/${id}`,
       {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken") || ""}`,
+        },
       }
     );
 

@@ -114,10 +114,7 @@ get total() {
   console.log("TOTAL ITEMS", items);
 
   return items.reduce((sum, item) => {
-    const price =
-      Number(item.product?.salePrice) ||
-      Number(item.product?.basePrice) ||
-      0;
+    const price = Number(item.product?.salePrice ?? item.product?.basePrice ?? 0);
 
     return sum + price * item.quantity;
   }, 0);

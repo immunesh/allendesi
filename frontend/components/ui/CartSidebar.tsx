@@ -26,10 +26,7 @@ export default function CartSidebar() {
   const [couponError, setCouponError] = useState('');
 
   const calculatedTotal = items.reduce((sum, item) => {
-    const price =
-      Number(item.product?.salePrice) ||
-      Number(item.product?.basePrice) ||
-      0;
+    const price = Number(item.product?.salePrice ?? item.product?.basePrice ?? 0);
 
     return sum + price * item.quantity;
   }, 0);
@@ -82,7 +79,7 @@ export default function CartSidebar() {
     try {
       setApplyingCoupon(true);
       setCouponError('');
-      const { data } = await couponApi.apply(couponInput, calculatedTotal);
+      const { data } = await couponApi.apply(couponInput);
       setCoupon(couponInput.toUpperCase(), data.data.discount);
     } catch (err: any) {
       setCouponError(err?.response?.data?.message || "Invalid coupon");
@@ -91,8 +88,10 @@ export default function CartSidebar() {
     }
   };
 
-  const shipping = calculatedTotal >= 999 ? 0 : 99;
-  const grandTotal = Math.max(calculatedTotal + shipping - discount, 0);
+  const discountedSubtotal = Math.max(calculatedTotal - discount, 0);
+  const shipping = discountedSubtotal >= 999 ? 0 : 99;
+  const tax = discountedSubtotal * 0.18;
+  const grandTotal = discountedSubtotal + shipping + tax;
   if (!isOpen) return null;
 
   return (
@@ -146,7 +145,7 @@ export default function CartSidebar() {
                 <ShoppingBag className="w-10 h-10 text-gray-300" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Your bag is empty</h3>
-              <p className="text-sm text-gray-500 mb-6">Looks like you haven&apos;t added any wigs yet.</p>
+              <p className="text-sm text-gray-500 mb-6">Your bag is ready for its first find.</p>
               <Link href="/shop" onClick={closeCart} className="btn-primary">
                 Start Shopping
               </Link>
@@ -155,7 +154,7 @@ export default function CartSidebar() {
             <div className="space-y-4">
               {items.map((item) => {
                 const primaryImg = item.product.images?.find((i) => i.isPrimary) || item.product.images?.[0];
-                const price = item.product.salePrice || item.product.basePrice;
+                const price = item.product.salePrice ?? item.product.basePrice;
                 return (
                   <div key={item.id} className="flex gap-4 p-3 bg-gray-50 rounded-2xl">
                     {primaryImg && (
@@ -257,20 +256,6 @@ export default function CartSidebar() {
                   {couponError && (
                     <p className="text-[10px] text-red-500 font-medium">{couponError}</p>
                   )}
-                  <div className="flex flex-wrap gap-1.5 mt-1.5">
-                    {['FIRST20', 'Allendesi200'].map((code) => (
-                      <button
-                        key={code}
-                        onClick={() => {
-                          setCouponInput(code);
-                          setCouponError('');
-                        }}
-                        className="text-[10px] bg-brand-50 text-brand-700 border border-brand-200 px-2 py-0.5 rounded-full font-medium hover:bg-brand-100 transition-colors"
-                      >
-                        {code}
-                      </button>
-                    ))}
-                  </div>
                 </div>
               ) : (
                 <div className="flex items-center justify-between bg-green-50/80 border border-green-100 rounded-xl p-2 px-3 animate-fade-in">
@@ -300,6 +285,10 @@ export default function CartSidebar() {
                 <span className={shipping === 0 ? 'text-green-600 font-medium' : ''}>
                   {shipping === 0 ? 'FREE' : formatPrice(shipping)}
                 </span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>GST (18%)</span>
+                <span>{formatPrice(tax)}</span>
               </div>
               <div className="flex justify-between font-bold text-base border-t border-gray-100 pt-2">
                 <span>Total</span>

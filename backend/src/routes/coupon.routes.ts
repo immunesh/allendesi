@@ -3,6 +3,7 @@ import { Router } from "express";
 import {
   getAllCoupons,
   createCoupon,
+  updateCoupon,
   toggleCouponStatus,
   deleteCoupon,
   applyCoupon,
@@ -15,9 +16,10 @@ import {
 
 const router = Router();
 
-/* PUBLIC */
 router.post(
   "/apply",
+  authenticate,
+  authorize('CUSTOMER'),
   applyCoupon
 );
 
@@ -36,6 +38,8 @@ router.post(
   "/",
   createCoupon
 );
+
+router.put('/:id', updateCoupon);
 
 router.patch(
   "/:id/toggle",

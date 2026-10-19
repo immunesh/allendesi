@@ -18,8 +18,8 @@ import { getAllStores } from "@/lib/store-api";
 import { MapPin, Phone, Mail, Clock, Navigation } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Find a Allendesi Store Near You',
-  description: '50+ Allendesi experience centres across India. Book a free in-store consultation with our certified hair specialists.',
+  title: 'Find an Allendesi Store Near You',
+  description: 'Explore Allendesi store locations and find in-person shopping and customer support near you.',
 };
 
  
@@ -35,14 +35,14 @@ export default async function StoresPage() {
             Find a Allendesi Store
           </h1>
           <p className="text-white/75 text-lg mb-6">
-            Visit any of our 50+ experience centres for a personalised wig consultation — completely free.
+            Find a nearby location for in-person shopping and customer assistance.
           </p>
           <div className="flex items-center justify-center gap-6 text-white/60 text-sm">
-            <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4" /> 50+ Cities</span>
+            <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4" /> Store Locations</span>
             <span>·</span>
-            <span>Free Consultations</span>
+            <span>In-Person Support</span>
             <span>·</span>
-            <span>Expert Specialists</span>
+            <span>Allendesi Stores</span>
           </div>
         </div>
       </div>
@@ -58,14 +58,13 @@ export default async function StoresPage() {
          
         {/* Consultation CTA */}
         <div className="mt-12 bg-brand-50 rounded-3xl p-10 text-center border border-brand-100">
-          <h2 className="text-2xl font-display font-bold text-gray-900 mb-3">Book a Free In-Store Consultation</h2>
+          <h2 className="text-2xl font-display font-bold text-gray-900 mb-3">Visit an Allendesi Store</h2>
           <p className="text-gray-600 mb-6 max-w-xl mx-auto">
-            Our certified trichologists will assess your hair type, recommend the best wig or hair system,
-            and help you with a professional fitting — all completely free.
+            Visit in person to explore products and speak with the Allendesi team.
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
             <a href="tel:+911800Allendesi" className="btn-primary flex items-center gap-2">
-              <Phone className="w-4 h-4" /> Call to Book
+              <Phone className="w-4 h-4" /> Call the Store
             </a>
             <a href="mailto:hello@Allendesi.com" className="btn-secondary flex items-center gap-2">
               <Mail className="w-4 h-4" /> Email Us

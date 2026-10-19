@@ -165,6 +165,7 @@ for (const image of galleryImages) {
         headers: {
           "Content-Type":
             "application/json",
+          Authorization: `Bearer ${localStorage.getItem("accessToken") || ""}`,
         },
 
 body: JSON.stringify({
@@ -328,7 +329,7 @@ includedItems,
 
         <input
           type="text"
-          placeholder="curly-human-hair-wig"
+          placeholder="premium-cotton-kurta"
           value={form.slug}
           onChange={(e) =>
             setForm({
@@ -751,7 +752,7 @@ includedItems,
 
         <input
           type="text"
-          placeholder="human hair, lace front, curly"
+          placeholder="fashion, home, everyday"
           value={form.tags}
           onChange={(e) =>
             setForm({

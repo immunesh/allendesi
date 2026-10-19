@@ -18,7 +18,7 @@ import {
   Award,
   Info,
 } from "lucide-react";
-import ProductCard from "@/components/ui/ProductCard";
+import ProductCarousel from "@/components/marketplace/ProductCarousel";
 import StarRating from "@/components/ui/StarRating";
 import { formatPrice, getDiscountPercent, formatDate } from "@/lib/utils";
 import { Product } from "@/types";
@@ -254,7 +254,7 @@ export default function ProductDetailPage() {
             href={`/${product.gender.toLowerCase()}`}
             className="hover:text-brand-600"
           >
-            {product.gender === "WOMEN" ? "Women's Wigs" : "Men's Hair Systems"}
+            {product.gender === "WOMEN" ? 'Women' : 'Men'}
           </Link>
           <ChevronRight className="w-3.5 h-3.5" />
           <span className="text-gray-900 font-medium line-clamp-1">
@@ -367,9 +367,9 @@ export default function ProductDetailPage() {
             {/* Price */}
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-3xl font-bold text-gray-900">
-                {formatPrice(product.salePrice || product.basePrice)}
+                {formatPrice(product.salePrice ?? product.basePrice)}
               </span>
-              {product.salePrice && (
+              {product.salePrice != null && product.salePrice < product.basePrice && (
                 <>
                   <span className="text-xl text-gray-400 line-through">
                     {formatPrice(product.basePrice)}
@@ -763,11 +763,7 @@ export default function ProductDetailPage() {
             <h2 className="text-2xl font-display font-bold text-gray-900 mb-6">
               You May Also Like
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-              {relatedProducts.map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-            </div>
+            <ProductCarousel products={relatedProducts} />
           </section>
         )}
       </div>

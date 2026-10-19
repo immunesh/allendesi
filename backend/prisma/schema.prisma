@@ -26,6 +26,15 @@ model User {
   wishlist      WishlistItem[]
   reviews       Review[]
   refreshTokens RefreshToken[]
+  products      Product[]             @relation("ProductSeller")
+  festivalProducts FestivalProduct[]   @relation("FestivalProductSeller")
+  sellerOffers  SellerOffer[]         @relation("OfferSeller")
+  reviewedOffers SellerOffer[]        @relation("OfferReviewer")
+  offerApprovalHistory OfferApprovalHistory[]
+  createdCampaigns MarketplaceCampaign[] @relation("CampaignCreator")
+  sellerOrderItems OrderItem[]        @relation("OrderItemSeller")
+  couponUsages  CouponUsage[]
+  campaignUsages CampaignUsage[]
 
   emailNotifications      Boolean @default(true)
   offerNotifications      Boolean @default(true)
@@ -80,6 +89,8 @@ model Category {
   parent      Category?  @relation("CategoryParent", fields: [parentId], references: [id])
   children    Category[] @relation("CategoryParent")
   products    Product[]
+  campaigns   CampaignCategory[]
+  coupons     CouponCategory[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -92,8 +103,8 @@ model Product {
   slug          String           @unique
   description   String
   shortDesc     String?
-  categoryId    String
-  category      Category         @relation(fields: [categoryId], references: [id])
+  categoryId    String?
+  category      Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   gender        String
   basePrice     Float
   salePrice     Float?
@@ -121,14 +132,66 @@ model Product {
   reviews       Review[]
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
+  sellerId      String?
+  seller        User?            @relation("ProductSeller", fields: [sellerId], references: [id], onDelete: SetNull)
+  sellerOffers  SellerOffer[]
+  campaignProducts CampaignProduct[]
+  couponProducts CouponProduct[]
 
   includedItems IncludedItem[]
   faqs          ProductFAQ[]
   careGuides    CareGuide[]
   features      ProductFeature[]
   highlights    ProductHighlight[]
+  festivals     FestivalProduct[]
 
   @@map("products")
+}
+
+model Festival {
+  id                  String            @id @default(uuid())
+  name                String
+  slug                String            @unique
+  description         String?
+  bannerImage         String?
+  thumbnail           String?
+  startsAt            DateTime
+  endsAt              DateTime
+  pageTitle           String?
+  promotionalText     String?
+  pageBanner          String?
+  isFeatured          Boolean           @default(false)
+  isActive            Boolean           @default(true)
+  isPublished         Boolean           @default(false)
+  approvalEnabled     Boolean           @default(true)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  products            FestivalProduct[]
+
+  @@index([isActive, isPublished, startsAt, endsAt])
+  @@map("festivals")
+}
+
+model FestivalProduct {
+  id                     String   @id @default(uuid())
+  festivalId             String
+  festival               Festival @relation(fields: [festivalId], references: [id], onDelete: Cascade)
+  productId              String
+  product                Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sellerId               String
+  seller                 User     @relation("FestivalProductSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  status                 String   @default("PENDING_APPROVAL")
+  festivalPrice          Float?
+  discountPercent        Float?
+  stock                  Int?
+  promotionalDescription String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@unique([festivalId, productId])
+  @@index([sellerId, status])
+  @@index([festivalId, status])
+  @@map("festival_products")
 }
 
 model ProductHighlight {
@@ -276,6 +339,10 @@ model Order {
   tax               Float           @default(0)
   total             Float
   couponCode        String?
+  couponId          String?
+  coupon            Coupon?         @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  campaignId        String?
+  campaign          MarketplaceCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   notes             String?
   estimatedDelivery DateTime?
   deliveredAt       DateTime?
@@ -286,6 +353,8 @@ model Order {
   shipmentNotes     String?
   items             OrderItem[]
   tracking          OrderTracking[]
+  couponUsage       CouponUsage?
+  campaignUsage     CampaignUsage?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
@@ -302,9 +371,22 @@ model OrderItem {
   image     String?
   quantity  Int
   price     Float
+  originalPrice Float?
+  sellerDiscount Float @default(0)
+  campaignDiscount Float @default(0)
+  couponDiscount Float @default(0)
+  sellerId  String?
+  seller    User?      @relation("OrderItemSeller", fields: [sellerId], references: [id], onDelete: SetNull)
+  offerId   String?
+  sellerOffer SellerOffer? @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  campaignId String?
+  campaign  MarketplaceCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   variant   String?
   createdAt DateTime @default(now())
 
+  @@index([sellerId])
+  @@index([offerId])
+  @@index([campaignId])
   @@map("order_items")
 }
 
@@ -348,11 +430,168 @@ model Coupon {
   maxDiscount Float?
   usageLimit  Int?
   usedCount   Int       @default(0)
+  perUserLimit Int?
+  startsAt    DateTime?
   isActive    Boolean   @default(true)
+  stackingAllowed Boolean @default(false)
   expiresAt   DateTime?
   createdAt   DateTime  @default(now())
+  products    CouponProduct[]
+  categories  CouponCategory[]
+  orders      Order[]
+  usages      CouponUsage[]
 
   @@map("coupons")
+}
+
+model SellerOffer {
+  id              String   @id @default(uuid())
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sellerId        String
+  seller          User     @relation("OfferSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  discountPercent Float?
+  salePrice       Float?
+  startsAt        DateTime
+  endsAt          DateTime
+  status          String   @default("PENDING_APPROVAL")
+  rejectionReason String?
+  reviewedById    String?
+  reviewedBy      User?    @relation("OfferReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  orderItems      OrderItem[]
+  history         OfferApprovalHistory[]
+
+  @@index([sellerId, status])
+  @@index([productId, status])
+  @@index([startsAt, endsAt])
+  @@map("seller_offers")
+}
+
+model OfferApprovalHistory {
+  id        String      @id @default(uuid())
+  offerId   String
+  offer     SellerOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  actorId   String
+  actor     User        @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  action    String
+  reason    String?
+  createdAt DateTime    @default(now())
+
+  @@index([offerId, createdAt])
+  @@map("offer_approval_history")
+}
+
+model DiscountPolicy {
+  id                          String   @id @default("global")
+  sellerOffersRequireApproval Boolean  @default(true)
+  maximumSellerDiscount       Float    @default(90)
+  updatedAt                   DateTime @updatedAt
+
+  @@map("discount_policies")
+}
+
+model MarketplaceCampaign {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  type            String
+  value           Float
+  minOrder        Float?
+  maxDiscount     Float?
+  startsAt        DateTime
+  endsAt          DateTime
+  usageLimit      Int?
+  usedCount       Int      @default(0)
+  perUserLimit    Int?
+  stackingAllowed Boolean  @default(false)
+  isActive        Boolean  @default(false)
+  createdById     String
+  createdBy       User     @relation("CampaignCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  products        CampaignProduct[]
+  categories      CampaignCategory[]
+  orders          Order[]
+  usages          CampaignUsage[]
+  orderItems      OrderItem[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([isActive, startsAt, endsAt])
+  @@map("marketplace_campaigns")
+}
+
+model CampaignProduct {
+  campaignId String
+  campaign   MarketplaceCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([campaignId, productId])
+  @@map("campaign_products")
+}
+
+model CampaignCategory {
+  campaignId String
+  campaign   MarketplaceCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([campaignId, categoryId])
+  @@map("campaign_categories")
+}
+
+model CouponProduct {
+  couponId  String
+  coupon    Coupon  @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([couponId, productId])
+  @@map("coupon_products")
+}
+
+model CouponCategory {
+  couponId   String
+  coupon     Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([couponId, categoryId])
+  @@map("coupon_categories")
+}
+
+model CouponUsage {
+  id        String   @id @default(uuid())
+  couponId  String
+  coupon    Coupon   @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  orderId   String   @unique
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  discount  Float
+  createdAt DateTime @default(now())
+
+  @@unique([couponId, userId, orderId])
+  @@index([couponId, userId])
+  @@map("coupon_usages")
+}
+
+model CampaignUsage {
+  id         String   @id @default(uuid())
+  campaignId String
+  campaign   MarketplaceCampaign @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  orderId    String   @unique
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  discount   Float
+  createdAt  DateTime @default(now())
+
+  @@unique([campaignId, userId, orderId])
+  @@index([campaignId, userId])
+  @@map("campaign_usages")
 }
 
 model StoreLocation {

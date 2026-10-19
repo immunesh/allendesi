@@ -11,6 +11,10 @@ export default function AddProductPage() {
     companyName: '',
     name: '',
     basePrice: '',
+    offerMode: 'PERCENTAGE' as 'PERCENTAGE' | 'SALE_PRICE',
+    offerValue: '',
+    offerStartsAt: '',
+    offerEndsAt: '',
     stock: '',
     description: '',
   });
@@ -57,6 +61,15 @@ export default function AddProductPage() {
     }
   };
 
+  const calculatedOfferPrice = (() => {
+    const basePrice = Number(form.basePrice);
+    const value = Number(form.offerValue);
+    if (!form.offerValue || !Number.isFinite(basePrice) || !Number.isFinite(value)) return null;
+    return form.offerMode === 'PERCENTAGE'
+      ? Math.round(basePrice * (1 - value / 100) * 100) / 100
+      : value;
+  })();
+
   const handleSubmit = async (
     e: React.FormEvent<HTMLFormElement>
   ) => {
@@ -65,6 +78,26 @@ export default function AddProductPage() {
     if (!categories.some((category) => category.id === selectedCategoryId)) {
       alert('Please select a category.');
       return;
+    }
+    const hasOffer = Boolean(form.offerValue.trim() || form.offerStartsAt || form.offerEndsAt);
+    if (hasOffer) {
+      if (!form.offerValue.trim() || !form.offerStartsAt || !form.offerEndsAt) {
+        alert('Enter an offer value, start date, and end date, or leave all offer fields empty.');
+        return;
+      }
+      const value = Number(form.offerValue);
+      if (!Number.isFinite(value) || value <= 0 || (form.offerMode === 'PERCENTAGE' && value > 100)) {
+        alert('Enter a valid discount or sale price.');
+        return;
+      }
+      if (calculatedOfferPrice == null || calculatedOfferPrice < 0 || calculatedOfferPrice >= Number(form.basePrice)) {
+        alert('The sale price must be non-negative and below the original price.');
+        return;
+      }
+      if (new Date(form.offerEndsAt) <= new Date(form.offerStartsAt)) {
+        alert('Offer end date must be later than its start date.');
+        return;
+      }
     }
 
     try {
@@ -130,6 +163,7 @@ export default function AddProductPage() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`,
           },
           body: JSON.stringify(payload),
         }
@@ -143,8 +177,32 @@ export default function AddProductPage() {
         );
       }
 
-      alert('Product added successfully!');
-      router.push('/seller/products');
+      if (hasOffer) {
+        const offerPayload = {
+          productId: data.data.id,
+          discountPercent: form.offerMode === 'PERCENTAGE' ? Number(form.offerValue) : null,
+          salePrice: form.offerMode === 'SALE_PRICE' ? Number(form.offerValue) : calculatedOfferPrice,
+          startsAt: new Date(form.offerStartsAt).toISOString(),
+          endsAt: new Date(form.offerEndsAt).toISOString(),
+        };
+        const offerRes = await fetch('http://localhost:5000/api/offers/seller', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`,
+          },
+          body: JSON.stringify(offerPayload),
+        });
+        const offerData = await offerRes.json();
+        if (!offerRes.ok) {
+          alert(`Product added, but the offer was not submitted: ${offerData.message || 'Please submit it from Offers & Discounts.'}`);
+          router.push('/seller/offers');
+          return;
+        }
+      }
+
+      alert(hasOffer ? 'Product and offer submitted successfully.' : 'Product added successfully!');
+      router.push(hasOffer ? '/seller/offers' : '/seller/products');
     } catch (error) {
       console.error(error);
       alert(String(error));
@@ -259,6 +317,29 @@ export default function AddProductPage() {
             />
           </div>
         </div>
+
+        <fieldset className="space-y-4 border border-white/10 p-4">
+          <legend className="px-2 text-sm font-semibold text-white">Optional offer</legend>
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="block text-sm text-gray-300">Set offer by
+              <select value={form.offerMode} onChange={(e) => setForm({ ...form, offerMode: e.target.value as 'PERCENTAGE' | 'SALE_PRICE', offerValue: '' })} className="input-field mt-1">
+                <option value="PERCENTAGE">Discount percentage</option>
+                <option value="SALE_PRICE">Sale price</option>
+              </select>
+            </label>
+            <label className="block text-sm text-gray-300">{form.offerMode === 'PERCENTAGE' ? 'Discount percentage' : 'Sale price'}
+              <input type="number" min="0" step="0.01" max={form.offerMode === 'PERCENTAGE' ? 100 : undefined} value={form.offerValue} onChange={(e) => setForm({ ...form, offerValue: e.target.value })} className="input-field mt-1" />
+            </label>
+            <label className="block text-sm text-gray-300">Offer starts
+              <input type="datetime-local" value={form.offerStartsAt} onChange={(e) => setForm({ ...form, offerStartsAt: e.target.value })} className="input-field mt-1" />
+            </label>
+            <label className="block text-sm text-gray-300">Offer ends
+              <input type="datetime-local" value={form.offerEndsAt} onChange={(e) => setForm({ ...form, offerEndsAt: e.target.value })} className="input-field mt-1" />
+            </label>
+          </div>
+          {calculatedOfferPrice != null && <p className="text-xs text-gray-400">Original price: {form.basePrice || '—'} · Calculated sale price: {calculatedOfferPrice.toFixed(2)}</p>}
+          <p className="text-xs text-gray-500">Seller offers follow the marketplace approval policy.</p>
+        </fieldset>
 
         {/* Image Upload */}
         <div>

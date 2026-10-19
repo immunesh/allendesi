@@ -115,7 +115,7 @@ export default function LoginPage() {
             Sign in to access your wishlist, orders, and special member offers.
           </p>
           <div className="space-y-4">
-            {['Track your orders instantly', 'Manage your saved wishlist', 'Unlock exclusive offers', 'Access your virtual try-on looks'].map((benefit) => (
+            {['Track your orders', 'Manage your saved wishlist', 'Unlock exclusive offers', 'Get product recommendations'].map((benefit) => (
               <div key={benefit} className="flex items-center gap-3 text-gray-200">
                 <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-red-600/20 text-xs text-red-400">
                   ✓

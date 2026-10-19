@@ -16,6 +16,7 @@ const menuItems = [
 { name: "Dashboard", href: "/admin" },
 { name: "Products", href: "/admin/products" },
 { name: "Categories", href: "/admin/categories" },
+{ name: "Manage Festivals", href: "/admin/festivals" },
 { name: "Hero Section", href: "/admin/hero-section" },
 { name: "Hero Slides", href: "/admin/hero-slides" },
 { name: "Orders", href: "/admin/orders" },
@@ -24,6 +25,7 @@ const menuItems = [
 { name: "Wishlist", href: "/admin/wishlist" },
 { name: "Reviews", href: "/admin/reviews" },
 { name: "Coupons", href: "/admin/coupons" },
+{ name: "Offers & Promotions", href: "/admin/offers" },
 { name: "Blogs", href: "/admin/blogs" },
 { name: "Stores", href: "/admin/stores" },
 ];

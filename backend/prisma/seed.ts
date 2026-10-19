@@ -314,6 +314,28 @@ async function main() {
     console.log(`Created: ${p.name}`);
   }
 
+  const festivals = [
+    { name: 'Diwali', slug: 'diwali', description: 'Shop lights, gifts, decor, and festive essentials for Diwali.', startsAt: '2026-10-20T00:00:00.000Z', endsAt: '2026-11-20T23:59:59.000Z', isFeatured: true },
+    { name: 'Christmas', slug: 'christmas', description: 'Discover gifts, ornaments, and seasonal decorations for Christmas.', startsAt: '2026-12-01T00:00:00.000Z', endsAt: '2026-12-31T23:59:59.000Z', isFeatured: true },
+    { name: "Valentine's Day", slug: 'valentines-day', description: 'Find thoughtful gifts, flowers, and treats for someone special.', startsAt: '2027-02-01T00:00:00.000Z', endsAt: '2027-02-15T23:59:59.000Z', isFeatured: false },
+    { name: 'Holi', slug: 'holi', description: 'Get ready for Holi with colours, water toys, and celebration essentials.', startsAt: '2027-03-01T00:00:00.000Z', endsAt: '2027-03-31T23:59:59.000Z', isFeatured: false },
+    { name: 'Raksha Bandhan', slug: 'raksha-bandhan', description: 'Browse rakhis, gifts, and treats for Raksha Bandhan.', startsAt: '2027-08-01T00:00:00.000Z', endsAt: '2027-08-31T23:59:59.000Z', isFeatured: false },
+  ];
+  for (const festival of festivals) {
+    await prisma.festival.upsert({
+      where: { slug: festival.slug },
+      update: {},
+      create: {
+        ...festival,
+        startsAt: new Date(festival.startsAt),
+        endsAt: new Date(festival.endsAt),
+        isActive: true,
+        isPublished: true,
+        approvalEnabled: true,
+      },
+    });
+  }
+
   await prisma.coupon.upsert({
     where: { code: 'FIRST20' },
     update: {},

@@ -46,7 +46,9 @@ export default function SellerProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/products');
+      const res = await fetch('http://localhost:5000/api/products/seller', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}` },
+      });
 
       if (!res.ok) {
         throw new Error('Failed to fetch products');
@@ -120,6 +122,7 @@ export default function SellerProductsPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`,
         },
         body: JSON.stringify({
           name: draft.name,
@@ -174,6 +177,7 @@ export default function SellerProductsPage() {
 
       const res = await fetch(`http://localhost:5000/api/products/${productId}`, {
         method: 'DELETE',
+        headers: { Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}` },
       });
 
       const data = await res.json();

@@ -650,7 +650,7 @@ const handleSaveNotifications =
   {
     key: "blogNotifications",
     label: "Blog & Style Tips",
-    desc: "Weekly hair care and styling guides",
+    desc: "Shopping guides, product tips, and seasonal ideas",
   },
   {
     key: "restockNotifications",

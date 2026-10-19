@@ -93,7 +93,7 @@ export default function RegisterPage() {
           <h2 className="text-4xl font-display font-bold text-white mb-4">Join the Allendesi Family</h2>
           <p className="text-white/70 text-lg mb-8">Create your account and unlock the full Allendesi experience.</p>
           <div className="space-y-4">
-            {['₹500 welcome discount on your first order', 'Early access to new arrivals & sales', 'Personalised style recommendations', 'Expert wig care tips & tutorials', 'Free virtual try-on for all members'].map((perk) => (
+            {['Member-only offers and promotions', 'Early access to new arrivals', 'Personalised product recommendations', 'Order updates in one place', 'Save your favourite products'].map((perk) => (
               <div key={perk} className="flex items-center gap-3 text-white/80">
                 <div className="w-5 h-5 rounded-full bg-green-400/30 flex items-center justify-center flex-shrink-0">
                   <Check className="w-3 h-3 text-green-300" />

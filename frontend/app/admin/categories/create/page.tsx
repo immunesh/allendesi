@@ -121,7 +121,7 @@ return (
               name: e.target.value,
             })
           }
-          placeholder="Human Hair Wigs"
+          placeholder="Home & Kitchen"
           className="
           w-full
 
@@ -159,7 +159,7 @@ return (
               slug: e.target.value,
             })
           }
-          placeholder="human-hair-wigs"
+          placeholder="home-kitchen"
           className="
           w-full
 

@@ -55,7 +55,7 @@ export default function SellerRegisterPage() {
           <div className="space-y-4 rounded-3xl border border-white/10 bg-black/20 p-5">
             <div>
               <label className="mb-2 block text-sm text-gray-300">Shop Name</label>
-              <input value={form.shopName} onChange={(e) => setForm({ ...form, shopName: e.target.value })} className="input-field" placeholder="Luxury Hair Studio" />
+              <input value={form.shopName} onChange={(e) => setForm({ ...form, shopName: e.target.value })} className="input-field" placeholder="Your Store Name" />
             </div>
             <div>
               <label className="mb-2 block text-sm text-gray-300">Owner Name</label>

@@ -2,12 +2,32 @@ import { Response } from 'express';
 import { prisma } from '../db/prisma';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { AppError } from '../middleware/error.middleware';
+import { calculateCartPricing } from '../services/pricing.service';
 
 const generateOrderNumber = (): string => {
   const timestamp = Date.now().toString(36).toUpperCase();
   const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `HU-${timestamp}-${random}`;
+  return `ALL-${timestamp}-${random}`;
 };
+
+  const festivalIdFromVariant = (value: string | null): string | undefined => {
+    if (!value) return undefined;
+    try {
+      const parsed = JSON.parse(value);
+      return typeof parsed?.festivalId === 'string' ? parsed.festivalId : undefined;
+    } catch { return undefined; }
+  };
+
+  async function restoreFestivalInventory(orderId: string): Promise<void> {
+    const items = await prisma.orderItem.findMany({ where: { orderId }, select: { productId: true, quantity: true, variant: true } });
+    for (const item of items) {
+      const festivalId = festivalIdFromVariant(item.variant);
+      await prisma.product.update({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } });
+      if (!festivalId) continue;
+      const listing = await prisma.festivalProduct.findUnique({ where: { festivalId_productId: { festivalId, productId: item.productId } } });
+      if (listing?.stock != null) await prisma.festivalProduct.update({ where: { id: listing.id }, data: { stock: { increment: item.quantity } } });
+    }
+  }
 
 // Valid forward status transitions. SHIPPED is reachable only through the
 // dedicated shipment endpoints, which enforce that an AWB has been assigned.
@@ -49,97 +69,137 @@ const validateShipmentPayload = (body: Record<string, unknown>) => {
 
 export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
   const { addressId, paymentMethod, couponCode, notes } = req.body;
-
-  const address = await prisma.address.findFirst({
-    where: { id: addressId, userId: req.user!.userId },
-  });
-  if (!address) throw new AppError('Address not found', 404);
-
- const cartItems = await prisma.cartItem.findMany({
-  where: { userId: req.user!.userId },
-  include: {
-    product: {
-      select: {
-        id: true,
-        name: true,
-        basePrice: true,
-        salePrice: true,
-        images: {
-          where: { isPrimary: true },
-          take: 1
+  const userId = req.user!.userId;
+  const order = await prisma.$transaction(async (tx) => {
+    const address = await tx.address.findFirst({ where: { id: addressId, userId } });
+    if (!address) throw new AppError('Address not found', 404);
+    const cartItems = await tx.cartItem.findMany({
+      where: { userId },
+      include: { product: { include: { images: { where: { isPrimary: true }, take: 1 } } } },
+    });
+    if (!cartItems.length) throw new AppError('Cart is empty', 400);
+    const now = new Date();
+    for (const item of cartItems) {
+      if (!item.product.isActive || item.quantity < 1 || item.quantity > item.product.stock) {
+        throw new AppError(`${item.product.name} no longer has enough stock`, 409);
+      }
+      const festivalId = festivalIdFromVariant(item.variant);
+      if (festivalId) {
+        const listing = await tx.festivalProduct.findFirst({ where: {
+          festivalId, productId: item.productId, status: 'APPROVED',
+          festival: { isActive: true, isPublished: true, startsAt: { lte: now }, endsAt: { gte: now } },
+        } });
+        if (!listing || (listing.stock != null && item.quantity > listing.stock)) throw new AppError(`${item.product.name} is no longer available in this festival`, 409);
+        if (listing.stock != null) {
+          const reserved = await tx.festivalProduct.updateMany({ where: { id: listing.id, status: 'APPROVED', stock: { gte: item.quantity } }, data: { stock: { decrement: item.quantity } } });
+          if (reserved.count !== 1) throw new AppError(`${item.product.name} festival stock just sold out`, 409);
         }
       }
+      const reservedProduct = await tx.product.updateMany({ where: { id: item.productId, isActive: true, stock: { gte: item.quantity } }, data: { stock: { decrement: item.quantity } } });
+      if (reservedProduct.count !== 1) throw new AppError(`${item.product.name} just sold out`, 409);
     }
-  }
-});
-  if (!cartItems.length) throw new AppError('Cart is empty', 400);
+    const pricing = await calculateCartPricing(
+      cartItems.map((item) => ({ product: item.product, quantity: item.quantity, festivalId: festivalIdFromVariant(item.variant) })),
+      { userId, couponCode: typeof couponCode === 'string' && couponCode.trim() ? couponCode : undefined, db: tx }
+    );
+    const lineByProduct = new Map(pricing.lines.map((line) => [line.productId, line]));
+    const shipping = pricing.finalSubtotal >= 999 ? 0 : 99;
+    const tax = Math.round(pricing.finalSubtotal * 0.18 * 100) / 100;
+    const total = Math.max(0, pricing.finalSubtotal + shipping + tax);
+    const created = await tx.order.create({
+      data: {
+        orderNumber: generateOrderNumber(),
+        userId,
+        addressId,
+        paymentMethod,
+        subtotal: pricing.originalSubtotal,
+        discount: pricing.totalDiscount,
+        shipping,
+        tax,
+        total,
+        couponCode: pricing.couponCode,
+        couponId: pricing.couponId,
+        campaignId: pricing.campaignId,
+        notes,
+        tracking: { create: { status: 'PENDING', message: 'Order placed successfully.' } },
+      },
+    });
 
-  const subtotal = cartItems.reduce((sum, item) => {
-    const price = Number(item.product.salePrice ?? item.product.basePrice ?? 0);
-    return sum + price * item.quantity;
-  }, 0);
+    await tx.orderItem.createMany({
+      data: cartItems.map((item) => {
+        const line = lineByProduct.get(item.productId)!;
+        return {
+          orderId: created.id,
+          productId: item.productId,
+          sellerId: item.product.sellerId,
+          offerId: line.offerId,
+          campaignId: line.campaignId,
+          name: item.product.name,
+          image: item.product.images[0]?.url ?? null,
+          quantity: item.quantity,
+          price: line.price,
+          originalPrice: line.originalPrice,
+          sellerDiscount: line.sellerDiscount,
+          campaignDiscount: line.campaignDiscount,
+          couponDiscount: line.couponDiscount,
+          variant: item.variant,
+        };
+      }),
+    });
 
-const orderItems = cartItems.map((item) => {
-  const price = Number(item.product.salePrice ?? item.product.basePrice ?? 0);
-
-  return {
-    productId: item.productId,
-    name: item.product.name,
-    image: item.product.images[0]?.url,
-    quantity: item.quantity,
-    price,
-    variant: item.variant,
-  };
-});
-  let discount = 0;
-  if (couponCode) {
-    const coupon = await prisma.coupon.findFirst({ where: { code: couponCode, isActive: true } });
-    if (coupon) {
-      if (coupon.type === 'PERCENTAGE') {
-        discount = (subtotal * coupon.value) / 100;
-        if (coupon.maxDiscount) discount = Math.min(discount, coupon.maxDiscount);
-      } else {
-        discount = coupon.value;
+    if (pricing.couponId) {
+      const coupon = await tx.coupon.findUnique({ where: { id: pricing.couponId } });
+      const now = new Date();
+      if (!coupon || !coupon.isActive || (coupon.startsAt && coupon.startsAt > now) || (coupon.expiresAt && coupon.expiresAt < now)) {
+        throw new AppError('Coupon is no longer valid', 409);
       }
+      const consumed = await tx.coupon.updateMany({
+        where: {
+          id: coupon.id,
+          isActive: true,
+          ...(coupon.usageLimit == null ? {} : { usedCount: { lt: coupon.usageLimit } }),
+          AND: [
+            { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+            { OR: [{ expiresAt: null }, { expiresAt: { gte: now } }] },
+          ],
+        },
+        data: { usedCount: { increment: 1 } },
+      });
+      if (consumed.count !== 1) throw new AppError('Coupon usage limit reached', 409);
+      if (coupon.perUserLimit != null) {
+        const userUses = await tx.couponUsage.count({ where: { couponId: coupon.id, userId } });
+        if (userUses >= coupon.perUserLimit) throw new AppError('Coupon usage limit reached for this account', 409);
+      }
+      await tx.couponUsage.create({ data: { couponId: coupon.id, userId, orderId: created.id, discount: pricing.couponDiscount } });
     }
-  }
 
-  const shipping = subtotal > 999 ? 0 : 99;
-  const tax = (subtotal - discount) * 0.18;
-  const total = subtotal - discount + shipping + tax;
+    if (pricing.campaignId) {
+      const campaign = await tx.marketplaceCampaign.findUnique({ where: { id: pricing.campaignId } });
+      const now = new Date();
+      if (!campaign || !campaign.isActive || campaign.startsAt > now || campaign.endsAt < now) {
+        throw new AppError('Campaign is no longer active', 409);
+      }
+      const consumed = await tx.marketplaceCampaign.updateMany({
+        where: {
+          id: campaign.id,
+          isActive: true,
+          startsAt: { lte: now },
+          endsAt: { gte: now },
+          ...(campaign.usageLimit == null ? {} : { usedCount: { lt: campaign.usageLimit } }),
+        },
+        data: { usedCount: { increment: 1 } },
+      });
+      if (consumed.count !== 1) throw new AppError('Campaign usage limit reached', 409);
+      if (campaign.perUserLimit != null) {
+        const userUses = await tx.campaignUsage.count({ where: { campaignId: campaign.id, userId } });
+        if (userUses >= campaign.perUserLimit) throw new AppError('Campaign usage limit reached for this account', 409);
+      }
+      await tx.campaignUsage.create({ data: { campaignId: campaign.id, userId, orderId: created.id, discount: pricing.campaignDiscount } });
+    }
 
-  const order = await prisma.order.create({
-    data: {
-      orderNumber: generateOrderNumber(),
-      userId: req.user!.userId,
-      addressId,
-      paymentMethod,
-      subtotal,
-      discount,
-      shipping,
-      tax,
-      total,
-      couponCode,
-      notes,
-      tracking: { create: { status: 'PENDING', message: 'Order placed successfully.' } },
-    },
-    include: { items: true, address: true, tracking: true },
+    await tx.cartItem.deleteMany({ where: { userId } });
+    return tx.order.findUniqueOrThrow({ where: { id: created.id }, include: { items: true, address: true, tracking: true } });
   });
-
-  await prisma.orderItem.createMany({
-    data: orderItems.map((item) => ({
-      orderId: order.id,
-      productId: item.productId,
-      sellerId: req.user!.userId,
-      name: item.name,
-      image: item.image ?? null,
-      quantity: item.quantity,
-      price: item.price,
-      variant: item.variant ?? null,
-    }) as any),
-  });
-
-  await prisma.cartItem.deleteMany({ where: { userId: req.user!.userId } });
   res.status(201).json({ success: true, data: order });
 };
 
@@ -190,6 +250,7 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
       tracking: { create: { status: 'CANCELLED', message: 'Order cancelled by customer.' } },
     },
   });
+  await restoreFestivalInventory(id);
   res.json({ success: true, message: 'Order cancelled successfully' });
 };
 
@@ -267,7 +328,9 @@ export const updateSellerOrderDecision = async (
       throw new AppError('Seller update must be CONFIRMED, CANCELLED or DELIVERED', 400);
     }
 
-    const existing = await prisma.order.findUnique({ where: { id } });
+    const existing = await prisma.order.findFirst({
+      where: { id, items: { some: { sellerId: req.user!.userId } } },
+    });
 
     if (!existing) throw new AppError('Order not found', 404);
 
@@ -303,6 +366,7 @@ export const updateSellerOrderDecision = async (
       },
       include: { items: true, address: true, tracking: { orderBy: { createdAt: 'desc' } } },
     });
+    if (status === 'CANCELLED') await restoreFestivalInventory(id);
 
     res.json({ success: true, data: order });
   } catch (error) {
@@ -355,6 +419,7 @@ const order = await prisma.order.update({
   },
   include: { items: true, address: true, tracking: { orderBy: { createdAt: 'desc' } } },
 });
+if (status === 'CANCELLED') await restoreFestivalInventory(id);
 
 res.json({
 success: true,
@@ -470,6 +535,7 @@ export const getSellerOrders = async (
 ): Promise<void> => {
   const orders = await prisma.order.findMany({
     where: {
+      items: { some: { sellerId: req.user!.userId } },
       status: {
         in: ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'],
       },
@@ -483,6 +549,7 @@ export const getSellerOrders = async (
         },
       },
       items: {
+        where: { sellerId: req.user!.userId },
         include: {
           product: true,
         },

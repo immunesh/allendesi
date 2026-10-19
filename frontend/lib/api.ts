@@ -87,17 +87,7 @@ export const ordersApi = {
 };
  
 export const couponApi = {
-  apply: (
-    code: string,
-    subtotal: number
-  ) =>
-    api.post(
-      "/coupons/apply",
-      {
-        code,
-        subtotal,
-      }
-    ),
+  apply: (code: string) => api.post('/coupons/apply', { code }),
 };
 
 // User

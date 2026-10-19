@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Heart, ShoppingBag, Star, Eye, Zap } from 'lucide-react';
+import { Heart, ShoppingBag, Star, Eye, Zap, Package } from 'lucide-react';
 import { Product } from '@/types';
 import { formatPrice, getDiscountPercent } from '@/lib/utils';
 import { useCartStore, useWishlistStore, useAuthStore, useUIStore } from '@/lib/store';
@@ -13,11 +13,13 @@ import { cn } from '@/lib/utils';
 interface ProductCardProps {
   product: Product;
   className?: string;
+  promoLabel?: string;
 }
 
-export default function ProductCard({ product, className }: ProductCardProps) {
+export default function ProductCard({ product, className, promoLabel }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
   const { isAuthenticated } = useAuthStore();
   const { addItem: addToCart } = useCartStore();
   const { items: wishlistItems, addItem: addToWishlist, removeItem: removeFromWishlist } = useWishlistStore();
@@ -34,23 +36,15 @@ const primaryImage =
   product.images?.find((img) => img.isPrimary) ||
   product.images?.[0];
 
-const hoverImage =
-  product.images?.find((img) => !img.isPrimary) ||
-  primaryImage;
-
 const imageUrl = primaryImage?.url
   ? primaryImage.url.startsWith("http")
     ? primaryImage.url
-    : `${API_BASE}${primaryImage.url}`
-  : "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800";
-
-const hoverUrl = hoverImage?.url
-  ? hoverImage.url.startsWith("http")
-    ? hoverImage.url
-    : `${API_BASE}${hoverImage.url}`
-  : imageUrl;
+    : `${API_BASE}${primaryImage.url.startsWith('/') ? '' : '/'}${primaryImage.url}`
+  : null;
     const isWishlisted = wishlistItems.some((i) => i.productId === product.id);
-  const discountPct = product.salePrice ? getDiscountPercent(product.basePrice, product.salePrice) : 0;
+  const discountPct = product.salePrice != null && product.salePrice < product.basePrice
+    ? getDiscountPercent(product.basePrice, product.salePrice)
+    : 0;
 
  const handleAddToCart = async (e: React.MouseEvent) => {
   e.preventDefault();
@@ -60,7 +54,7 @@ const hoverUrl = hoverImage?.url
    try {
   console.log("ADDING PRODUCT", product.id);
 
-  const { data } = await cartApi.add(product.id, 1);
+  const { data } = await cartApi.add(product.id, 1, product.festivalListing?.festivalId ? { festivalId: product.festivalListing.festivalId } : undefined);
 
   console.log("CART RESPONSE", data);
       addToCart(data.data);
@@ -110,17 +104,19 @@ console.log("CARD", {
       >
         {/* Image container */}
         <div className="relative aspect-product bg-gray-50 overflow-hidden">
-          {primaryImage && (
+          {imageUrl && !imageFailed ? (
             <Image
-  src={
-    primaryImage?.url ||
-    "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800"
-  }
-  alt={product.name}
-  fill
-  className="object-cover transition-transform duration-500 group-hover:scale-105"
-  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-/>
+              src={imageUrl}
+              alt={primaryImage?.alt || product.name}
+              fill
+              onError={() => setImageFailed(true)}
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-[#171717] text-gray-500" aria-label="Product image unavailable">
+              <Package className="h-10 w-10" aria-hidden="true" />
+            </div>
           )}
 
           {/* Badges */}
@@ -133,6 +129,9 @@ console.log("CARD", {
             )}
             {product.isBestSeller && (
               <span className="badge-best text-xs">Best Seller</span>
+            )}
+            {promoLabel && (
+              <span className="rounded-sm bg-white px-2 py-1 text-[10px] font-bold uppercase text-[#0b0b0b]">{promoLabel}</span>
             )}
           </div>
 
@@ -221,9 +220,9 @@ console.log("CARD", {
           {/* Price */}
           <div className="flex items-center flex-wrap gap-1">
             <span className="font-bold text-gray-900">
-              {formatPrice(product.salePrice || product.basePrice)}
+              {formatPrice(product.salePrice ?? product.basePrice)}
             </span>
-            {product.salePrice && (
+            {product.salePrice != null && product.salePrice < product.basePrice && (
               <span className="text-xs text-gray-400 line-through">
                 {formatPrice(product.basePrice)}
               </span>
@@ -235,7 +234,7 @@ console.log("CARD", {
             )}
           </div>
 
-          {/* Try-on hint */}
+          {/* Shipping note */}
           <div className="flex items-center gap-1 mt-2 text-xs text-brand-600 font-medium">
             <Zap className="w-3 h-3" />
             <span>Free shipping</span>
